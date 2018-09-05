@@ -1,0 +1,38 @@
+{
+  "name": "keyble",
+  "version": "0.1.0",
+  "description": "Command line tools and library for controlling eqiva eQ-3 Bluetooth smart locks",
+  "main": "keyble.js",
+  "bin": {
+    "keyble-sendcommand": "./send_command_to_smart_lock_cli.js",
+    "keyble-registeruser": "./register_user_cli.js"
+  },
+  "scripts": {
+    "compile": "coffee --bare --no-header --map --compile *.coffee",
+    "prepublish": "npm run compile",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oyooyo/keyble.git"
+  },
+  "keywords": [
+    "eqiva",
+    "eQ-3",
+    "Bluetooth",
+    "Smart Lock"
+  ],
+  "author": {
+    "name": "oyooyo"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "coffeescript": "^2.3.1"
+  },
+  "dependencies": {
+    "aes-js": "^3.1.1",
+    "argparse": "^1.0.10",
+    "debug": "^3.1.0",
+    "simble": "^0.1.0"
+  }
+}
