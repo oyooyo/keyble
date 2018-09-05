@@ -1,13 +1,11 @@
-//!/usr/bin/env coffee
-//`#!/usr/bin/env node
+#!/usr/bin/env node
 
-//'use strict'`
+'use strict';
+var args, argument_parser, cli, key_ble, keyble;
 
 // Command line tool for controlling (lock/unlock/open) eqiva eQ-3 Bluetooth smart locks
 
 // Import/Require the local "cli" module that provides some useful functions for CLI scripts
-var args, argument_parser, cli, key_ble, keyble;
-
 cli = require('./cli');
 
 // Import/Require the "keyble" module that provides a library for the eqiva eQ-3 Bluetooth smart locks

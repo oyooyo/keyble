@@ -1,7 +1,6 @@
-#!/usr/bin/env coffee
-#`#!/usr/bin/env node
-#
-#'use strict'`
+`#!/usr/bin/env node
+
+'use strict'`
 
 # Command line tool for registering users on eqiva eQ-3 Bluetooth smart locks
 
