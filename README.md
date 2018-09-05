@@ -26,11 +26,19 @@ Right now, the provided command line tools are the only reasonable way to use *k
 
 ## Installation
 
-With Node.js/npm installed, you can easily install *keyble* globally by running on a command line:
+With Node.js/npm installed, you can install *keyble* globally by running on a command line:
 
-    $ npm install -g keyble
+    $ npm install keyble
+    $ cd node_modules/keyble
+    $ sudo npm link
 
-If using Linux, you will probably need to run this command with sudo. Furthermore, please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux).
+Installing *keyble* globally by running
+
+    $ sudo npm install -g keyble
+
+somehow does not work yet; there appears to be a problem with installing the Node.js bluetooth library *noble* globally, which *keyble* depends on.
+
+If using Linux, please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux).
 
 ## Command line tools
 
@@ -122,6 +130,8 @@ For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get
     $ mosquitto_sub -h 192.168.0.2 -t "door_lock/action" | keyble-sendcommand -a 01:23:56:67:89:ab -u 1 -k ca78ad9b96131414359e5e7cecfd7f9e
 
 Assuming a MQTT broker with IP address 192.168.0.2, sending message "open" to the MQTT topic "door_lock/action" for example would then open the Smart Lock.
+
+*This feature does not work work yet, there seems to be bug, it currently only works the first time*
 
 ## Beware of firmware updates
 
