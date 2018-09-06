@@ -1,6 +1,6 @@
 # keyble
 
-*keyble* is a set of command line tools and *(not yet)* a Node.js library for controlling/interfacing with [eqiva eQ-3 Bluetooth Smart Lock](https://www.eq-3.com/products/eqiva/bluetooth-smart-lock.html)s.
+*keyble* is a set of command line tools for controlling/interfacing with [eqiva eQ-3 Bluetooth Smart Lock](https://www.eq-3.com/products/eqiva/bluetooth-smart-lock.html)s.
 
 At a price of just about 60€, these Smart Locks offer an excellent price/performance ratio. But until now, these smart locks could only be controlled using the vendor's official Smartphone app, and could not be integrated into existing smart home systems.
 
@@ -12,9 +12,6 @@ At a price of just about 60€, these Smart Locks offer an excellent price/perfo
     - Registering new users
     - Opening / locking / unlocking the smart lock
 - The code still needs to be improved, there are a number of bugs etc. and the code is not very elegant yet
-- It cannot be used as a library so far, for the library part is completely undocumented right now and will probably still change a lot in the near future
-
-Right now, the provided command line tools are the only reasonable way to use *keyble*.
 
 ## Requirements
 
@@ -28,17 +25,16 @@ Right now, the provided command line tools are the only reasonable way to use *k
 
 With Node.js/npm installed, you can install *keyble* globally by running on a command line:
 
-    $ npm install keyble
-    $ cd node_modules/keyble
-    $ sudo npm link
+    $ npm install -g keyble --unsafe-perm
 
-Installing *keyble* globally by running
+The [`--unsafe-perm`](https://docs.npmjs.com/misc/config#unsafe-perm) flag seems to be necessary in order to install *keyble* globally via the `-g` flag (at least under Linux). If installing locally, without the `-g` flag, it works fine without the `--unsafe-perm` flag. This issue seems to be caused by one of *keyble*'s dependencies (see [#707](https://github.com/noble/noble/issues/707)).
 
-    $ sudo npm install -g keyble
+### Linux
 
-somehow does not work yet; there appears to be a problem with installing the Node.js bluetooth library *noble* globally, which *keyble* depends on.
+If using Linux...
 
-If using Linux, please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux).
+- you will probably need to run this command with *sudo*
+- please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux).
 
 ## Command line tools
 
@@ -74,9 +70,9 @@ Usage example:
     Setting user name to "John"...
     User name changed, finished registering user.
 
-### Piping data into keyble-sendcommand
+### Piping data into keyble-registeruser
 
-If the QR-Code data is not passed on the command line via the --qr_code_data/-q argument, *keyble-registeruser* will read the data from STDIN instead. This allows simply piping the output of a QR-Code-Reader into *keyble-registeruser*.
+If the QR-Code data is not passed on the command line via the `--qr_code_data/-q` argument, *keyble-registeruser* will read the data from STDIN instead. This allows simply piping the output of a QR-Code-Reader into *keyble-registeruser*.
 
 For example, if you have a Webcam and the *[zbar](http://zbar.sourceforge.net/)* tools installed *(`sudo apt-get install zbar-tools`)*, you can run:
 
@@ -87,6 +83,8 @@ For example, if you have a Webcam and the *[zbar](http://zbar.sourceforge.net/)*
     User registered. Use arguments: --address 01:23:56:67:89:ab --user_id 1 --user_key ca78ad9b96131414359e5e7cecfd7f9e
     Setting user name to "PC"...
     User name changed, finished registering user.
+
+The above command is the recommended way to register a new user under Linux.
 
 ## keyble-sendcommand
 
@@ -131,7 +129,7 @@ For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get
 
 Assuming a MQTT broker with IP address 192.168.0.2, sending message "open" to the MQTT topic "door_lock/action" for example would then open the Smart Lock.
 
-*This feature does not work work yet, there seems to be bug, it currently only works the first time*
+**As I just discovered, this feature does not work properly yet - there seems to be bug, it currently only works for the first command.**
 
 ## Beware of firmware updates
 
