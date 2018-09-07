@@ -1,6 +1,6 @@
 {
   "name": "keyble",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Command line tools and library for controlling eqiva eQ-3 Bluetooth smart locks",
   "main": "keyble.js",
   "bin": {
@@ -33,6 +33,6 @@
     "aes-js": "^3.1.1",
     "argparse": "^1.0.10",
     "debug": "^3.1.0",
-    "simble": "^0.1.0"
+    "simble": "^0.1.1"
   }
 }

@@ -18,7 +18,7 @@ At a price of just about 60€, these Smart Locks offer an excellent price/perfo
 *keyble* requires the following hard- and software
 
 - Bluetooth 4.0 compatible hardware
-- [Node.js](https://nodejs.org/)
+- [Node.js](https://nodejs.org/) *(only tested with Node.js 8.x so far - Node.js 10.x does not seem to work yet, due to a problem with Node 10.x in one of the dependencies)*
 - Linux, OSX or Windows operating system *(only really tested on Linux so far)*
 
 ## Installation
