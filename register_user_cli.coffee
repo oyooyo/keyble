@@ -37,7 +37,8 @@ if require.main is module
 			# Parse/Decode the information encoded in the QR-Codes on the "Key Card"s
 			key_card_data = keyble.key_card.parse(key_card_data_string)
 			console.log "Registering user on Smart Lock with address \"#{key_card_data.address}\", card key \"#{key_card_data.register_key}\" and serial \"#{key_card_data.serial}\"..."
-			key_ble = new keyble.Key_Ble(key_card_data.address)
+			key_ble = new keyble.Key_Ble
+				address: key_card_data.address
 			key_ble.pairing_request(key_card_data.register_key)
 			.then (user_data) ->
 				console.log "User registered. Use arguments: " + cli.ansi_colorize("--address #{key_card_data.address} --user_id #{user_data.user_id} --user_key #{user_data.user_key}", '44')

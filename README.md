@@ -129,8 +129,6 @@ For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get
 
 Assuming a MQTT broker with IP address 192.168.0.2, sending message "open" to the MQTT topic "door_lock/action" for example would then open the Smart Lock.
 
-**As I just discovered, this feature does not work properly yet - there seems to be bug, it currently only works for the first command.**
-
 ## Beware of firmware updates
 
 Be aware that the vendor might *(at least temporarily)* render this software useless with a future firmware update.

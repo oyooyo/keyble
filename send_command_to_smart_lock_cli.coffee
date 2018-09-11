@@ -37,12 +37,19 @@ if require.main is module
 		help: 'The command to perform. If not provided on the command line, the command(s) will be read as input lines from STDIN instead'
 	args = argument_parser.parseArgs()
 
-	key_ble = new keyble.Key_Ble(args.address, args.user_id, args.user_key)
+	key_ble = new keyble.Key_Ble
+		address: args.address
+		user_id: args.user_id
+		user_key: args.user_key
 	cli.process_input args.command, process.stdin, (command) ->
 		console.log "Sending command \"#{command}\"..."
 		key_ble.send_command({'lock':0, 'unlock':1, 'open':2}[command])
 		.then ->
 			console.log "Command \"#{command}\" sent."
+		.then ->
+			# TODO this should be improved as well
+			cli.delay(5000)
+		.then ->
 			key_ble.disconnect()
 		.catch (error) ->
 			console.error "Error: #{error}"

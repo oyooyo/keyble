@@ -542,11 +542,11 @@ state = {
 
 // A class that represents the eqiva eQ-3 Bluetooth smart lock
 Key_Ble = class extends Event_Emitter {
-  constructor(address, user_id, user_key) {
+  constructor(options) {
     super();
-    this.address = simble.canonicalize.address(address);
-    this.user_id = first_valid_value(user_id, 0xFF);
-    this.user_key = convert_to_byte_array(user_key);
+    this.address = simble.canonicalize.address(options.address);
+    this.user_id = first_valid_value(options.user_id, 0xFF);
+    this.user_key = convert_to_byte_array(options.user_key);
     this.received_message_fragments = [];
     this.local_security_counter = 0;
     this.remote_security_counter = 0;
@@ -715,7 +715,7 @@ Key_Ble = class extends Event_Emitter {
     }
     return simble.scan_for_peripheral(simble.filter.address(this.address)).then((peripheral) => {
       this.peripheral = peripheral;
-      return this.peripheral.ensure_discovered();
+      return this.peripheral.ensure_connected_and_discovered();
     }).then(() => {
       var communication_service;
       communication_service = this.peripheral.get_discovered_service('58e06900-15d8-11e6-b737-0002a5d5c51b');

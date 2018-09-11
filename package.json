@@ -1,6 +1,6 @@
 {
   "name": "keyble",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Command line tools and library for controlling eqiva eQ-3 Bluetooth smart locks",
   "main": "keyble.js",
   "bin": {
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "compile": "coffee --bare --no-header --map --compile *.coffee",
-    "prepublish": "npm run compile",
+    "prepublishOnly": "npm run compile",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -33,6 +33,6 @@
     "aes-js": "^3.1.1",
     "argparse": "^1.0.10",
     "debug": "^3.1.0",
-    "simble": "^0.1.1"
+    "simble": "^0.1.2"
   }
 }

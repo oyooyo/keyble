@@ -42,7 +42,11 @@ if (require.main === module) {
     help: 'The command to perform. If not provided on the command line, the command(s) will be read as input lines from STDIN instead'
   });
   args = argument_parser.parseArgs();
-  key_ble = new keyble.Key_Ble(args.address, args.user_id, args.user_key);
+  key_ble = new keyble.Key_Ble({
+    address: args.address,
+    user_id: args.user_id,
+    user_key: args.user_key
+  });
   cli.process_input(args.command, process.stdin, function(command) {
     console.log(`Sending command "${command}"...`);
     return key_ble.send_command({
@@ -50,7 +54,11 @@ if (require.main === module) {
       'unlock': 1,
       'open': 2
     }[command]).then(function() {
-      console.log(`Command "${command}" sent.`);
+      return console.log(`Command "${command}" sent.`);
+    }).then(function() {
+      // TODO this should be improved as well
+      return cli.delay(5000);
+    }).then(function() {
       return key_ble.disconnect();
     }).catch(function(error) {
       return console.error(`Error: ${error}`);
