@@ -715,7 +715,7 @@ Key_Ble = class extends Event_Emitter {
     }
     return simble.scan_for_peripheral(simble.filter.address(this.address)).then((peripheral) => {
       this.peripheral = peripheral;
-      return this.peripheral.ensure_connected_and_discovered();
+      return this.peripheral.ensure_discovered();
     }).then(() => {
       var communication_service;
       communication_service = this.peripheral.get_discovered_service('58e06900-15d8-11e6-b737-0002a5d5c51b');

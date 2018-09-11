@@ -594,7 +594,7 @@ Key_Ble = class extends Event_Emitter
 		if (@state >= state.connected) then return Promise.resolve()
 		simble.scan_for_peripheral simble.filter.address(@address)
 		.then (@peripheral) =>
-			@peripheral.ensure_connected_and_discovered()
+			@peripheral.ensure_discovered()
 		.then =>
 			communication_service = @peripheral.get_discovered_service('58e06900-15d8-11e6-b737-0002a5d5c51b')
 			@send_characteristic = communication_service.get_discovered_characteristic('3141dd40-15db-11e6-a24b-0002a5d5c51b')
