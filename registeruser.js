@@ -62,4 +62,4 @@ if (require.main === module) {
   });
 }
 
-//# sourceMappingURL=register_user_cli.js.map
+//# sourceMappingURL=registeruser.js.map

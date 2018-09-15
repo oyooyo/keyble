@@ -72,4 +72,4 @@ if (require.main === module) {
   });
 }
 
-//# sourceMappingURL=send_command_to_smart_lock_cli.js.map
+//# sourceMappingURL=sendcommand.js.map

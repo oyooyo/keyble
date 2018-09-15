@@ -1,5 +1,5 @@
 'use strict';
-var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_btle, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, xor_array;
+var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, xor_array;
 
 // Returns true if the passed argument <value> is neither null nor undefined
 is_valid_value = function(value) {
@@ -347,9 +347,6 @@ crypt_data = function(data, message_type_id, session_open_nonce, security_counte
   return xor_array(data, xor_data);
 };
 
-// Debug output function for keyble Bluetooth communication
-debug_btle = require('debug')('keyble:btle');
-
 // Debug output function for keyble events
 debug_events = require('debug')('keyble:events');
 
@@ -656,7 +653,6 @@ Key_Ble = class extends Event_Emitter {
 
   on_message_received(message) {
     this.emit('received:message', message);
-    //debug_btle "Received message #{message.label}: #{byte_array_to_hex_string(message.data)}"
     switch (message.__type__) {
       case Connection_Info_Message:
         this.user_id = message.data.user_id;
@@ -668,7 +664,6 @@ Key_Ble = class extends Event_Emitter {
   send_message_fragment(message_fragment) {
     return this.ensure_connected().then(() => {
       var ack_promise, send_promise;
-      debug_btle(`Send:    ${byte_array_to_hex_string(message_fragment.byte_array)}`);
       send_promise = this.send_characteristic.write(message_fragment.byte_array);
       ack_promise = ((!message_fragment.is_last()) ? this.await_message('FRAGMENT_ACK') : Promise.resolve());
       return Promise.all([send_promise, ack_promise]);
@@ -709,29 +704,35 @@ Key_Ble = class extends Event_Emitter {
     });
   }
 
-  ensure_connected() {
-    if (this.state >= state.connected) {
-      return Promise.resolve();
+  ensure_peripheral() {
+    if (this.peripheral) {
+      return Promise.resolve(this.peripheral);
     }
     return simble.scan_for_peripheral(simble.filter.address(this.address)).then((peripheral) => {
-      this.peripheral = peripheral;
-      return this.peripheral.ensure_discovered();
-    }).then(() => {
+      return peripheral.ensure_discovered();
+    }).then((peripheral1) => {
       var communication_service;
+      this.peripheral = peripheral1;
+      this.peripheral.on('connected', () => {
+        this.state = state.connected;
+        this.emit('connected');
+      });
+      this.peripheral.on('disconnected', () => {
+        this.state = state.disconnected;
+        this.emit('disconnected');
+      });
       communication_service = this.peripheral.get_discovered_service('58e06900-15d8-11e6-b737-0002a5d5c51b');
       this.send_characteristic = communication_service.get_discovered_characteristic('3141dd40-15db-11e6-a24b-0002a5d5c51b');
       this.receive_characteristic = communication_service.get_discovered_characteristic('359d4820-15db-11e6-82bd-0002a5d5c51b');
       return this.receive_characteristic.subscribe((message_fragment_bytes) => {
-        debug_btle(`Receive: ${byte_array_to_hex_string(message_fragment_bytes)}`);
         return this.on_message_fragment_received(Message_Fragment.create(message_fragment_bytes));
       });
-    }).then(() => {
-      this.peripheral.on('disconnected', () => {
-        this.state = state.disconnected;
-        return this.emit('disconnected');
-      });
-      this.state = state.connected;
-      this.emit('connected');
+    });
+  }
+
+  ensure_connected() {
+    return this.ensure_peripheral().then(() => {
+      return ((this.state >= state.connected) ? Promise.resolve() : this.peripheral.ensure_discovered());
     });
   }
 

@@ -52,5 +52,8 @@ if require.main is module
 				console.error(error)
 				cli.exit(1)
 	.then ->
+		# TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 15 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
+		cli.delay(15000)
+	.then ->
 		# "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished
 		cli.exit()

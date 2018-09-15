@@ -273,9 +273,6 @@ crypt_data = (data, message_type_id, session_open_nonce, security_counter, key) 
 		xor_data,
 	)
 
-# Debug output function for keyble Bluetooth communication
-debug_btle = require('debug')('keyble:btle')
-
 # Debug output function for keyble events
 debug_events = require('debug')('keyble:events')
 
@@ -545,7 +542,6 @@ Key_Ble = class extends Event_Emitter
 
 	on_message_received: (message) ->
 		@emit 'received:message', message
-		#debug_btle "Received message #{message.label}: #{byte_array_to_hex_string(message.data)}"
 		switch message.__type__
 			when Connection_Info_Message
 				@user_id = message.data.user_id
@@ -556,7 +552,6 @@ Key_Ble = class extends Event_Emitter
 	send_message_fragment: (message_fragment) ->
 		@ensure_connected()
 		.then =>
-			debug_btle "Send:    #{byte_array_to_hex_string(message_fragment.byte_array)}"
 			send_promise = @send_characteristic.write(message_fragment.byte_array)
 			ack_promise = (if (not message_fragment.is_last()) then @await_message('FRAGMENT_ACK') else Promise.resolve())
 			Promise.all([send_promise, ack_promise])
@@ -590,25 +585,30 @@ Key_Ble = class extends Event_Emitter
 			@local_security_counter++
 			@send_message_fragments(message_fragments)
 
-	ensure_connected: ->
-		if (@state >= state.connected) then return Promise.resolve()
+	ensure_peripheral: ->
+		if @peripheral then return Promise.resolve(@peripheral)
 		simble.scan_for_peripheral simble.filter.address(@address)
+		.then (peripheral) =>
+			peripheral.ensure_discovered()
 		.then (@peripheral) =>
-			@peripheral.ensure_discovered()
-		.then =>
+			@peripheral.on 'connected', =>
+				@state = state.connected
+				@emit 'connected'
+				return
+			@peripheral.on 'disconnected', =>
+				@state = state.disconnected
+				@emit 'disconnected'
+				return
 			communication_service = @peripheral.get_discovered_service('58e06900-15d8-11e6-b737-0002a5d5c51b')
 			@send_characteristic = communication_service.get_discovered_characteristic('3141dd40-15db-11e6-a24b-0002a5d5c51b')
 			@receive_characteristic = communication_service.get_discovered_characteristic('359d4820-15db-11e6-82bd-0002a5d5c51b')
 			@receive_characteristic.subscribe (message_fragment_bytes) =>
-				debug_btle "Receive: #{byte_array_to_hex_string(message_fragment_bytes)}"
 				@on_message_fragment_received(Message_Fragment.create(message_fragment_bytes))
+
+	ensure_connected: ->
+		@ensure_peripheral()
 		.then =>
-			@peripheral.on 'disconnected', =>
-				@state = state.disconnected
-				@emit 'disconnected'
-			@state = state.connected
-			@emit 'connected'
-			return
+			return (if (@state >= state.connected) then Promise.resolve() else @peripheral.ensure_discovered())
 
 	ensure_nonces_exchanged: ->
 		if (@state >= state.nonces_exchanged) then return Promise.resolve()

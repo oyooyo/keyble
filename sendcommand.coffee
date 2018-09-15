@@ -47,15 +47,15 @@ if require.main is module
 		.then ->
 			console.log "Command \"#{command}\" sent."
 		.then ->
-			# TODO this should be improved as well
+			# TODO this should be improved/removed as well
 			cli.delay(5000)
 		.then ->
 			key_ble.disconnect()
 		.catch (error) ->
 			console.error "Error: #{error}"
 	.then ->
-		# TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 5 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
-		cli.delay(5000)
+		# TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 10 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
+		cli.delay(10000)
 	.then ->
 		# "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished
 		cli.exit()

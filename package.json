@@ -1,11 +1,11 @@
 {
   "name": "keyble",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Command line tools and library for controlling eqiva eQ-3 Bluetooth smart locks",
   "main": "keyble.js",
   "bin": {
-    "keyble-sendcommand": "./send_command_to_smart_lock_cli.js",
-    "keyble-registeruser": "./register_user_cli.js"
+    "keyble-sendcommand": "./sendcommand.js",
+    "keyble-registeruser": "./registeruser.js"
   },
   "scripts": {
     "compile": "coffee --bare --no-header --map --compile *.coffee",
@@ -32,7 +32,14 @@
   "dependencies": {
     "aes-js": "^3.1.1",
     "argparse": "^1.0.10",
-    "debug": "^3.1.0",
-    "simble": "^0.1.2"
-  }
+    "debug": "^4.0.1",
+    "simble": "^0.2.1"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "*.js",
+    "package.json",
+    "package-lock.json",
+    "README.md"
+  ]
 }
