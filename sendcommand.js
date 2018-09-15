@@ -56,7 +56,7 @@ if (require.main === module) {
     }[command]).then(function() {
       return console.log(`Command "${command}" sent.`);
     }).then(function() {
-      // TODO this should be improved as well
+      // TODO this should be improved/removed as well
       return cli.delay(5000);
     }).then(function() {
       return key_ble.disconnect();
@@ -64,8 +64,8 @@ if (require.main === module) {
       return console.error(`Error: ${error}`);
     });
   }).then(function() {
-    // TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 5 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
-    return cli.delay(5000);
+    // TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 10 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
+    return cli.delay(10000);
   }).then(function() {
     // "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished
     return cli.exit();

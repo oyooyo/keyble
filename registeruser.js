@@ -57,6 +57,9 @@ if (require.main === module) {
       });
     });
   }).then(function() {
+    // TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 15 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
+    return cli.delay(15000);
+  }).then(function() {
     // "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished
     return cli.exit();
   });
