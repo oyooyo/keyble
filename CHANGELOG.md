@@ -21,4 +21,9 @@
 - Fixed a number of bugs
 - Added *--status_update_time* and *--auto_disconnect_time* command line arguments
 - The *keyble-sendcommand* tool should now output the actual status, and recognize status changes caused by other users etc.
+- The *keyble-sendcommand* tool now accepts the command "status" that will trigger a manual status update
 - Started to document the API
+
+## v0.1.7 *(2018/10/13)*
+
+- Minor corrections

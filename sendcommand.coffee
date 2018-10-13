@@ -66,7 +66,9 @@ if require.main is module
 			when 'open' then key_ble.open()
 			when 'status' then key_ble.request_status()
 			else Promise.reject("Unknown command \"#{command}\"")
-		).catch (error) ->
+		).then (result) ->
+			console.log "Result:", result
+		.catch (error) ->
 			console.error "Error: #{error}"
 	.then ->
 		# "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished

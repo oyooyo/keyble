@@ -82,7 +82,9 @@ if (require.main === module) {
         default:
           return Promise.reject(`Unknown command "${command}"`);
       }
-    })()).catch(function(error) {
+    })()).then(function(result) {
+      return console.log("Result:", result);
+    }).catch(function(error) {
       return console.error(`Error: ${error}`);
     });
   }).then(function() {

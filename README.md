@@ -147,7 +147,7 @@ Beware that since *keyble* is still in early alpha state, the API is likely to s
     var keyble = require("keyble");
 
     // Create a new Key_Ble instance that represents one specific door lock
-    key_ble = new keyble.Key_Ble({
+    var key_ble = new keyble.Key_Ble({
         address: "01:23:45:67:89:ab", // The bluetooth MAC address of the door lock
         user_id: 1, // The user ID
         user_key: "0123456789abcdef0123456789abcdef", // The user-specific 128 bit AES key

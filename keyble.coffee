@@ -476,8 +476,8 @@ Key_Ble = class extends Event_Emitter
 	# Await up to <timeout> (default: 1000) milliseconds for the event with ID <event_id> (a string). If <timeout> is 0, wait forever. Returns a Promise that resolves when the event occurs, and rejects if a timeout situation occurs
 	await_event: (event_id) ->
 		new Promise (resolve, reject) =>
-			@once event_id, ->
-				resolve(arguments)
+			@once event_id, (args...) ->
+				resolve(args)
 				return
 			return
 
