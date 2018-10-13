@@ -1,5 +1,17 @@
 'use strict'
 
+# Checks if <value> is an array. Returns true if it is an array, false otherwise
+is_array = (value) ->
+	Array.isArray(value)
+
+arrays_are_equal = (array1, array2) ->
+	if (not (is_array(array1) and is_array(array2))) then return false
+	if (array1 is array2) then return true
+	if (array1.length isnt array2.length) then return false
+	for index in [0...array1.length] by 1
+		if (array1[index] isnt array2[index]) then return false
+	true
+
 # Returns true if the passed argument <value> is neither null nor undefined
 is_valid_value = (value) ->
 	((value isnt undefined) and (value isnt null))
@@ -21,6 +33,16 @@ byte_array_to_hex_string = (byte_array, separator_string, prefix_string, suffix_
 	prefix_string = first_valid_value(prefix_string, '')
 	suffix_string = first_valid_value(suffix_string, '')
 	("#{prefix_string}#{integer_to_zero_prefixed_hex_string(byte, 2)}#{suffix_string}" for byte in byte_array).join(separator_string)
+
+byte_array_to_integer = (byte_array, start_offset, end_offset) ->
+	start_offset = first_valid_value(start_offset, 0)
+	end_offset = first_valid_value(end_offset, byte_array.length)
+	temp = 0
+	for offset in [start_offset...end_offset] by 1
+		if offset < 0
+			offset += byte_array.length
+		temp = ((temp * 0x100) + byte_array[offset])
+	temp
 
 # Returns true if the bit with index <bit_index> is set in <value>, false otherwise
 bit_is_set = (value, bit_index) ->
@@ -52,10 +74,6 @@ Extendable =
 		@initialize.apply(instance, arguments)
 		instance
 	initialize: ->
-
-# Checks if <value> is an array. Returns true if it is an array, false otherwise
-is_array = (value) ->
-	Array.isArray(value)
 
 # An abstract prototype object for message types
 Message = Extendable.extend
@@ -201,6 +219,30 @@ Connection_Request_Message = message_type
 			data.local_session_nonce,
 		)
 
+# This class represents "STATUS_CHANGED_NOTIFICATION" messages
+# Java class "de.eq3.ble.key.android.a.a.ae" in original app
+Status_Changed_Notification_Message = message_type
+	id: 0x05
+	label: 'STATUS_CHANGED_NOTIFICATION'
+
+# This class represents "STATUS_INFO" messages
+# Java class "de.eq3.ble.key.android.a.a.af" in original app
+Status_Info_Message = message_type
+	id: 0x83
+	label: 'STATUS_INFO'
+	properties:
+		a: -> bit_is_set(@data_bytes[0], 6)
+		user_right_type: -> ((@data_bytes[0] & 0x30) >> 4)
+		e: -> bit_is_set(@data_bytes[1], 7)
+		f: -> bit_is_set(@data_bytes[1], 4)
+		g: -> bit_is_set(@data_bytes[1], 0)
+		h: -> bit_is_set(@data_bytes[2], 5)
+		i: -> bit_is_set(@data_bytes[2], 4)
+		j: -> bit_is_set(@data_bytes[2], 3)
+		lock_status: -> (@data_bytes[2] & 0x07)
+		l: -> @data_bytes[4]
+		m: -> @data_bytes[5]
+
 # Canonicalize hexadecimal string <hex_string> by removing all non-hexadecimal characters, and converting all hex digits to lower case
 canonicalize_hex_string = (hex_string) ->
 	hex_string.replace(/[^0-9A-Fa-f]/g, '').toLowerCase()
@@ -342,30 +384,6 @@ Pairing_Request_Message = message_type
 			data.authentication_value,
 		)
 
-# This class represents "STATUS_CHANGED_NOTIFICATION" messages
-# Java class "de.eq3.ble.key.android.a.a.ae" in original app
-Status_Changed_Notification_Message = message_type
-	id: 0x05
-	label: 'STATUS_CHANGED_NOTIFICATION'
-
-# This class represents "STATUS_INFO" messages
-# Java class "de.eq3.ble.key.android.a.a.af" in original app
-Status_Info_Message = message_type
-	id: 0x83
-	label: 'STATUS_INFO'
-	properties:
-		a: -> bit_is_set(@data_bytes[0], 6)
-		user_right_type: -> ((@data_bytes[0] & 0x30) >> 4)
-		e: -> bit_is_set(@data_bytes[1], 7)
-		f: -> bit_is_set(@data_bytes[1], 4)
-		g: -> bit_is_set(@data_bytes[1], 0)
-		h: -> bit_is_set(@data_bytes[2], 5)
-		i: -> bit_is_set(@data_bytes[2], 4)
-		j: -> bit_is_set(@data_bytes[2], 3)
-		lock_status: -> (@data_bytes[2] & 0x07)
-		l: -> @data_bytes[4]
-		m: -> @data_bytes[5]
-
 # This class represents "STATUS_REQUEST" messages; messages sent to the Smart Lock, informing the current date/time, and requesting status information
 # Java class "de.eq3.ble.key.android.a.a.ag" in original app
 Status_Request_Message = message_type
@@ -441,30 +459,30 @@ Key_Ble = class extends Event_Emitter
 		@address = simble.canonicalize.address(options.address)
 		@user_id = first_valid_value(options.user_id, 0xFF)
 		@user_key = convert_to_byte_array(options.user_key)
+		@auto_disconnect_time = first_valid_value(options.auto_disconnect_time, 15.0)
+		@set_status_update_time(options.status_update_time)
 		@received_message_fragments = []
-		@local_security_counter = 0
+		@local_security_counter = 1
 		@remote_security_counter = 0
 		@state = state.disconnected
+		@lock_status_id = null
+		return
+
+	set_status_update_time: (status_update_time) ->
+		@status_update_time = first_valid_value(status_update_time, 600.0)
+		@set_status_update_timer()
 		return
 
 	# Await up to <timeout> (default: 1000) milliseconds for the event with ID <event_id> (a string). If <timeout> is 0, wait forever. Returns a Promise that resolves when the event occurs, and rejects if a timeout situation occurs
-	await_event: (event_id, timeout) ->
+	await_event: (event_id) ->
 		new Promise (resolve, reject) =>
-			timeout = first_valid_value(timeout, 1000)
-			event_handler = ->
+			@once event_id, ->
 				resolve(arguments)
 				return
-			@once event_id, event_handler
-			if (timeout > 0)
-				setTimeout =>
-						@removeListener event_id, event_handler
-						reject(new Error("Timeout waiting for event \"#{event_id}\""))
-						return
-					, timeout
 			return
 
-	await_message: (message_type, timeout) ->
-		@await_event("received:message:#{message_type}", timeout)
+	await_message: (message_type) ->
+		@await_event("received:message:#{message_type}")
 
 	set_user_name: (user_name, user_id) ->
 		user_id = first_valid_value(user_id, @user_id)
@@ -508,15 +526,24 @@ Key_Ble = class extends Event_Emitter
 
 	# Lock the smart lock
 	lock: ->
+		if (@lock_status_id is 0) then return Promise.resolve()
 		@send_command(0)
+		.then =>
+			@await_event 'status:locked'
 
 	# Unlock the smart lock
 	unlock: ->
+		if (@lock_status_id is 2) then return Promise.resolve()
 		@send_command(1)
+		.then =>
+			@await_event 'status:unlocked'
 
 	# Open the smart lock
 	open: ->
+		if (@lock_status_id is 4) then return Promise.resolve()
 		@send_command(2)
+		.then =>
+			@await_event 'status:open'
 
 	# Send a COMMAND message with command/action ID <command_id> (0 = lock, 1 = unlock, 2 = open)
 	send_command: (command_id) ->
@@ -532,7 +559,13 @@ Key_Ble = class extends Event_Emitter
 				, []
 			Message_Type = message_types_by_id[@received_message_fragments[0].get_message_type_id()]
 			if Message_Type.is_secure()
-				[message_data_bytes, @remote_security_counter] = crypt_data(message_data_bytes, Message_Type.id, @local_session_nonce, @remote_security_counter, @user_key)
+				message_security_counter = byte_array_to_integer(message_data_bytes, -6, -4)
+				if (message_security_counter <= @remote_security_counter) then throw new Error('Received message contains invalid security counter')
+				message_authentication_value = message_data_bytes.slice(-4)
+				@remote_security_counter = message_security_counter
+				message_data_bytes = crypt_data(message_data_bytes.slice(0, -6), Message_Type.id, @local_session_nonce, @remote_security_counter, @user_key)
+				computed_authentication_value = compute_authentication_value(message_data_bytes, Message_Type.id, @local_session_nonce, @remote_security_counter, @user_key)
+				if (not arrays_are_equal(message_authentication_value, computed_authentication_value)) then throw new Error('Received message contains invalid authentication value')
 			@received_message_fragments = []
 			@on_message_received(Message_Type.create(message_data_bytes))
 		else
@@ -540,12 +573,33 @@ Key_Ble = class extends Event_Emitter
 				fragment_id: message_fragment.get_status_byte()
 		return
 
+	set_status_update_timer: ->
+		clearTimeout(@status_update_timer)
+		if (@status_update_time > 0)
+			@status_update_timer = setTimeout =>
+					@request_status()
+					return
+				, (@status_update_time * 1000)
+
 	on_message_received: (message) ->
 		@emit 'received:message', message
 		switch message.__type__
 			when Connection_Info_Message
 				@user_id = message.data.user_id
 				@remote_session_nonce = message.data.remote_session_nonce
+				@local_security_counter = 1
+				@remote_security_counter = 0
+			when Status_Info_Message
+				lock_status_id = message.data.lock_status
+				lock_status_string = {0:'locked', 1:'active', 2:'unlocked', 4:'open'}[lock_status_id]
+				@emit 'status_update', lock_status_id, lock_status_string
+				if (@lock_status_id isnt lock_status_id)
+					@lock_status_id = lock_status_id
+					@emit "status:#{lock_status_string}", lock_status_id, lock_status_string
+					@emit 'status_change', lock_status_id, lock_status_string
+				@set_status_update_timer()
+			when Status_Changed_Notification_Message
+				@request_status()
 		@emit "received:message:#{message.label}", message
 		return
 
@@ -578,11 +632,11 @@ Key_Ble = class extends Event_Emitter
 					integer_to_byte_array(@local_security_counter, 2),
 					compute_authentication_value(padded_data, message.id, @remote_session_nonce, @local_security_counter, @user_key),
 				)
+				@local_security_counter++
 			else
 				message_data_bytes = message.data_bytes
 			message_fragments = split_into_chunks(concatenated_array([message.id], message_data_bytes), 15).map (fragment_bytes, index, chunks) ->
 				Message_Fragment.create(concatenated_array([(chunks.length - 1 - index) + (if (index is 0) then 0x80 else 0x00)], padded_array(fragment_bytes, 15, 0)))
-			@local_security_counter++
 			@send_message_fragments(message_fragments)
 
 	ensure_peripheral: ->
@@ -591,6 +645,7 @@ Key_Ble = class extends Event_Emitter
 		.then (peripheral) =>
 			peripheral.ensure_discovered()
 		.then (@peripheral) =>
+			@peripheral.set_auto_disconnect_time(@auto_disconnect_time * 1000)
 			@peripheral.on 'connected', =>
 				@state = state.connected
 				@emit 'connected'
@@ -618,16 +673,24 @@ Key_Ble = class extends Event_Emitter
 			local_session_nonce: @local_session_nonce
 		.then =>
 			@await_message 'CONNECTION_INFO'
+		.then =>
+			@state = state.nonces_exchanged
+			@emit 'nonces_exchanged'
+			return
 
 	request_status: ->
 		@send_message Status_Request_Message.create()
 		.then =>
-			@await_message 'STATUS_INFO'
+			@await_event 'status_update'
 
-	disconnect: ->
+	ensure_disconnected: ->
+		if (@state < state.connected) then return Promise.resolve()
 		@send_message Close_Connection_Message.create()
 		.then =>
 			@peripheral.disconnect()
+
+	disconnect: ->
+		@ensure_disconnected()
 
 # The pattern of the data encoded in the QR-Code on the "Key Card"s of the eqiva eQ-3 Bluetooth smart locks, as a string
 key_card_data_pattern = '^M([0-9A-F]{12})K([0-9A-F]{32})([0-9A-Z]{10})$'

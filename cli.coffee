@@ -54,25 +54,44 @@ process_input = (input_sources..., input_handler) ->
 		input_source = input_sources.find (input_source) ->
 			(is_valid_value(input_source) and (not is_array(input_source) or (input_source.length > 0)))
 		if is_string(input_source)
-			# The input source is a single string; simply pass the string to the input handler
-			input_handler(input_source)
-			resolve()
-		else if is_array(input_source)
-			# The input source is a non-empty array; pass all elements of the array to the input handler
-			for input_element in input_source
-				input_handler(input_element)
-			resolve()
+			input_source = [input_source]
+		if is_array(input_source)
+			handle_next = ->
+				if (input_source.length is 0)
+					resolve()
+				else
+					Promise.resolve(input_handler(input_source.shift()))
+					.then ->
+						handle_next()
+				return
+			handle_next()
 		else
+			input_strings = []
+			closed = false
+			inactive = true
+			handle_next = ->
+				if inactive
+					if (input_strings.length > 0)
+						inactive = false
+						Promise.resolve(input_handler(input_strings.shift()))
+						.then ->
+							inactive = true
+							handle_next()
+					else if closed
+						resolve()
+				return
 			# The input source is expected to be a readable stream; read the stream line by line and pass the stripped lines to the input handler
 			readline = require('readline')
 			readline_interface = readline.createInterface
 				input: input_source
 				output: null
 			readline_interface.on 'line', (input_line) ->
-				input_handler(input_line.trim())
+				if (input_strings.push(input_line.trim()) is 1)
+					handle_next()
 				return
 			readline_interface.on 'close', ->
-				resolve()
+				closed = true
+				handle_next()
 				return
 		return
 

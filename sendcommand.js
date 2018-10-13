@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 'use strict';
-var args, argument_parser, cli, key_ble, keyble;
+var args, argument_parser, cli, default_auto_disconnect_time, default_status_update_time, key_ble, keyble;
 
 // Command line tool for controlling (lock/unlock/open) eqiva eQ-3 Bluetooth smart locks
 
@@ -10,6 +10,12 @@ cli = require('./cli');
 
 // Import/Require the "keyble" module that provides a library for the eqiva eQ-3 Bluetooth smart locks
 keyble = require('./keyble');
+
+// The default auto-disconnect time, in seconds
+default_auto_disconnect_time = 15.0;
+
+// The default status update time, in seconds
+default_status_update_time = 600.0;
 
 // ----
 // MAIN
@@ -35,6 +41,16 @@ if (require.main === module) {
     type: 'string',
     help: 'The user key'
   });
+  argument_parser.addArgument(['--auto_disconnect_time', '-adt'], {
+    type: 'float',
+    defaultValue: default_auto_disconnect_time,
+    help: `The auto-disconnect time, in seconds. A value of 0 will deactivate auto-disconnect (usually not recommended, drains battery) (default: ${default_auto_disconnect_time})`
+  });
+  argument_parser.addArgument(['--status_update_time', '-sut', '-t'], {
+    type: 'float',
+    defaultValue: default_status_update_time,
+    help: `The status update time, in seconds. A value of 0 will deactivate status updates (default: ${default_status_update_time})`
+  });
   argument_parser.addArgument(['--command', '-c'], {
     choices: ['lock', 'open', 'unlock'],
     required: false,
@@ -45,27 +61,30 @@ if (require.main === module) {
   key_ble = new keyble.Key_Ble({
     address: args.address,
     user_id: args.user_id,
-    user_key: args.user_key
+    user_key: args.user_key,
+    auto_disconnect_time: args.auto_disconnect_time,
+    status_update_time: args.status_update_time
+  });
+  key_ble.on('status_change', function(status_id, status_string) {
+    return console.log(status_string);
   });
   cli.process_input(args.command, process.stdin, function(command) {
-    console.log(`Sending command "${command}"...`);
-    return key_ble.send_command({
-      'lock': 0,
-      'unlock': 1,
-      'open': 2
-    }[command]).then(function() {
-      return console.log(`Command "${command}" sent.`);
-    }).then(function() {
-      // TODO this should be improved/removed as well
-      return cli.delay(5000);
-    }).then(function() {
-      return key_ble.disconnect();
-    }).catch(function(error) {
+    return ((function() {
+      switch (command) {
+        case 'lock':
+          return key_ble.lock();
+        case 'unlock':
+          return key_ble.unlock();
+        case 'open':
+          return key_ble.open();
+        case 'status':
+          return key_ble.request_status();
+        default:
+          return Promise.reject(`Unknown command "${command}"`);
+      }
+    })()).catch(function(error) {
       return console.error(`Error: ${error}`);
     });
-  }).then(function() {
-    // TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 10 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
-    return cli.delay(10000);
   }).then(function() {
     // "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished
     return cli.exit();

@@ -30,9 +30,10 @@ if require.main is module
 
 	# Print a short message remembering the user that he needs to activate the Smart Lock pairing mode
 	console.log cli.ansi_colorize('Press and hold "Unlock" button until the yellow light flashes in order to enter pairing mode', '41')
-	# If the key card data was passed directly on the command line, wait 10 seconds before proceeding, giving the user time to enter pairing mode
+	# If the QR code was provided on the command line, give the user 10 seconds to press and hold the "unlock" button for pairing
 	cli.delay(if args.qr_code_data then 10000 else 0)
 	.then ->
+		# If the key card data was passed directly on the command line, wait 10 seconds before proceeding, giving the user time to enter pairing mode
 		cli.process_input args.qr_code_data, process.stdin, (key_card_data_string) ->
 			# Parse/Decode the information encoded in the QR-Codes on the "Key Card"s
 			key_card_data = keyble.key_card.parse(key_card_data_string)
@@ -45,15 +46,12 @@ if require.main is module
 				console.log "Setting user name to \"#{args.user_name}\"..."
 				key_ble.set_user_name(args.user_name)
 			.then (user_data) ->
-				console.log "User name changed, finished registering user."
+				console.log "User name changed, finished registering user.\n"
 				key_ble.disconnect()
 			.catch (error) ->
 				# An error occurred while registering the user. Print the error message and exit with exit code 1
 				console.error(error)
 				cli.exit(1)
-	.then ->
-		# TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 15 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
-		cli.delay(15000)
 	.then ->
 		# "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished
 		cli.exit()

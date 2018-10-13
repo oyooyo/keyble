@@ -33,8 +33,9 @@ if (require.main === module) {
   args = argument_parser.parseArgs();
   // Print a short message remembering the user that he needs to activate the Smart Lock pairing mode
   console.log(cli.ansi_colorize('Press and hold "Unlock" button until the yellow light flashes in order to enter pairing mode', '41'));
-  // If the key card data was passed directly on the command line, wait 10 seconds before proceeding, giving the user time to enter pairing mode
+  // If the QR code was provided on the command line, give the user 10 seconds to press and hold the "unlock" button for pairing
   cli.delay(args.qr_code_data ? 10000 : 0).then(function() {
+    // If the key card data was passed directly on the command line, wait 10 seconds before proceeding, giving the user time to enter pairing mode
     return cli.process_input(args.qr_code_data, process.stdin, function(key_card_data_string) {
       var key_ble, key_card_data;
       // Parse/Decode the information encoded in the QR-Codes on the "Key Card"s
@@ -48,7 +49,7 @@ if (require.main === module) {
         console.log(`Setting user name to "${args.user_name}"...`);
         return key_ble.set_user_name(args.user_name);
       }).then(function(user_data) {
-        console.log("User name changed, finished registering user.");
+        console.log("User name changed, finished registering user.\n");
         return key_ble.disconnect();
       }).catch(function(error) {
         // An error occurred while registering the user. Print the error message and exit with exit code 1
@@ -56,9 +57,6 @@ if (require.main === module) {
         return cli.exit(1);
       });
     });
-  }).then(function() {
-    // TODO the delay is a dirty hack that should be removed later on. "process_input" above currently resolves before the commands are actually being sent; the 15 seconds delay hopefully ensures that the command is sent before the program exits via cle.exit()
-    return cli.delay(15000);
   }).then(function() {
     // "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished
     return cli.exit();

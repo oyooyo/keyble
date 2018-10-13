@@ -1,5 +1,29 @@
 'use strict';
-var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, xor_array;
+var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, arrays_are_equal, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, byte_array_to_integer, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, xor_array;
+
+// Checks if <value> is an array. Returns true if it is an array, false otherwise
+is_array = function(value) {
+  return Array.isArray(value);
+};
+
+arrays_are_equal = function(array1, array2) {
+  var i, index, ref;
+  if (!(is_array(array1) && is_array(array2))) {
+    return false;
+  }
+  if (array1 === array2) {
+    return true;
+  }
+  if (array1.length !== array2.length) {
+    return false;
+  }
+  for (index = i = 0, ref = array1.length; i < ref; index = i += 1) {
+    if (array1[index] !== array2[index]) {
+      return false;
+    }
+  }
+  return true;
+};
 
 // Returns true if the passed argument <value> is neither null nor undefined
 is_valid_value = function(value) {
@@ -37,6 +61,20 @@ byte_array_to_hex_string = function(byte_array, separator_string, prefix_string,
     }
     return results;
   })()).join(separator_string);
+};
+
+byte_array_to_integer = function(byte_array, start_offset, end_offset) {
+  var i, offset, ref, ref1, temp;
+  start_offset = first_valid_value(start_offset, 0);
+  end_offset = first_valid_value(end_offset, byte_array.length);
+  temp = 0;
+  for (offset = i = ref = start_offset, ref1 = end_offset; i < ref1; offset = i += 1) {
+    if (offset < 0) {
+      offset += byte_array.length;
+    }
+    temp = (temp * 0x100) + byte_array[offset];
+  }
+  return temp;
 };
 
 // Returns true if the bit with index <bit_index> is set in <value>, false otherwise
@@ -83,11 +121,6 @@ Extendable = {
     return instance;
   },
   initialize: function() {}
-};
-
-// Checks if <value> is an array. Returns true if it is an array, false otherwise
-is_array = function(value) {
-  return Array.isArray(value);
 };
 
 // An abstract prototype object for message types
@@ -266,6 +299,55 @@ Connection_Request_Message = message_type({
   }
 });
 
+// This class represents "STATUS_CHANGED_NOTIFICATION" messages
+// Java class "de.eq3.ble.key.android.a.a.ae" in original app
+Status_Changed_Notification_Message = message_type({
+  id: 0x05,
+  label: 'STATUS_CHANGED_NOTIFICATION'
+});
+
+// This class represents "STATUS_INFO" messages
+// Java class "de.eq3.ble.key.android.a.a.af" in original app
+Status_Info_Message = message_type({
+  id: 0x83,
+  label: 'STATUS_INFO',
+  properties: {
+    a: function() {
+      return bit_is_set(this.data_bytes[0], 6);
+    },
+    user_right_type: function() {
+      return (this.data_bytes[0] & 0x30) >> 4;
+    },
+    e: function() {
+      return bit_is_set(this.data_bytes[1], 7);
+    },
+    f: function() {
+      return bit_is_set(this.data_bytes[1], 4);
+    },
+    g: function() {
+      return bit_is_set(this.data_bytes[1], 0);
+    },
+    h: function() {
+      return bit_is_set(this.data_bytes[2], 5);
+    },
+    i: function() {
+      return bit_is_set(this.data_bytes[2], 4);
+    },
+    j: function() {
+      return bit_is_set(this.data_bytes[2], 3);
+    },
+    lock_status: function() {
+      return this.data_bytes[2] & 0x07;
+    },
+    l: function() {
+      return this.data_bytes[4];
+    },
+    m: function() {
+      return this.data_bytes[5];
+    }
+  }
+});
+
 // Canonicalize hexadecimal string <hex_string> by removing all non-hexadecimal characters, and converting all hex digits to lower case
 canonicalize_hex_string = function(hex_string) {
   return hex_string.replace(/[^0-9A-Fa-f]/g, '').toLowerCase();
@@ -437,55 +519,6 @@ Pairing_Request_Message = message_type({
   }
 });
 
-// This class represents "STATUS_CHANGED_NOTIFICATION" messages
-// Java class "de.eq3.ble.key.android.a.a.ae" in original app
-Status_Changed_Notification_Message = message_type({
-  id: 0x05,
-  label: 'STATUS_CHANGED_NOTIFICATION'
-});
-
-// This class represents "STATUS_INFO" messages
-// Java class "de.eq3.ble.key.android.a.a.af" in original app
-Status_Info_Message = message_type({
-  id: 0x83,
-  label: 'STATUS_INFO',
-  properties: {
-    a: function() {
-      return bit_is_set(this.data_bytes[0], 6);
-    },
-    user_right_type: function() {
-      return (this.data_bytes[0] & 0x30) >> 4;
-    },
-    e: function() {
-      return bit_is_set(this.data_bytes[1], 7);
-    },
-    f: function() {
-      return bit_is_set(this.data_bytes[1], 4);
-    },
-    g: function() {
-      return bit_is_set(this.data_bytes[1], 0);
-    },
-    h: function() {
-      return bit_is_set(this.data_bytes[2], 5);
-    },
-    i: function() {
-      return bit_is_set(this.data_bytes[2], 4);
-    },
-    j: function() {
-      return bit_is_set(this.data_bytes[2], 3);
-    },
-    lock_status: function() {
-      return this.data_bytes[2] & 0x07;
-    },
-    l: function() {
-      return this.data_bytes[4];
-    },
-    m: function() {
-      return this.data_bytes[5];
-    }
-  }
-});
-
 // This class represents "STATUS_REQUEST" messages; messages sent to the Smart Lock, informing the current date/time, and requesting status information
 // Java class "de.eq3.ble.key.android.a.a.ag" in original app
 Status_Request_Message = message_type({
@@ -544,33 +577,32 @@ Key_Ble = class extends Event_Emitter {
     this.address = simble.canonicalize.address(options.address);
     this.user_id = first_valid_value(options.user_id, 0xFF);
     this.user_key = convert_to_byte_array(options.user_key);
+    this.auto_disconnect_time = first_valid_value(options.auto_disconnect_time, 15.0);
+    this.set_status_update_time(options.status_update_time);
     this.received_message_fragments = [];
-    this.local_security_counter = 0;
+    this.local_security_counter = 1;
     this.remote_security_counter = 0;
     this.state = state.disconnected;
+    this.lock_status_id = null;
     return;
   }
 
+  set_status_update_time(status_update_time) {
+    this.status_update_time = first_valid_value(status_update_time, 600.0);
+    this.set_status_update_timer();
+  }
+
   // Await up to <timeout> (default: 1000) milliseconds for the event with ID <event_id> (a string). If <timeout> is 0, wait forever. Returns a Promise that resolves when the event occurs, and rejects if a timeout situation occurs
-  await_event(event_id, timeout) {
+  await_event(event_id) {
     return new Promise((resolve, reject) => {
-      var event_handler;
-      timeout = first_valid_value(timeout, 1000);
-      event_handler = function() {
+      this.once(event_id, function() {
         resolve(arguments);
-      };
-      this.once(event_id, event_handler);
-      if (timeout > 0) {
-        setTimeout(() => {
-          this.removeListener(event_id, event_handler);
-          reject(new Error(`Timeout waiting for event "${event_id}"`));
-        }, timeout);
-      }
+      });
     });
   }
 
-  await_message(message_type, timeout) {
-    return this.await_event(`received:message:${message_type}`, timeout);
+  await_message(message_type) {
+    return this.await_event(`received:message:${message_type}`);
   }
 
   set_user_name(user_name, user_id) {
@@ -610,17 +642,32 @@ Key_Ble = class extends Event_Emitter {
 
   // Lock the smart lock
   lock() {
-    return this.send_command(0);
+    if (this.lock_status_id === 0) {
+      return Promise.resolve();
+    }
+    return this.send_command(0).then(() => {
+      return this.await_event('status:locked');
+    });
   }
 
   // Unlock the smart lock
   unlock() {
-    return this.send_command(1);
+    if (this.lock_status_id === 2) {
+      return Promise.resolve();
+    }
+    return this.send_command(1).then(() => {
+      return this.await_event('status:unlocked');
+    });
   }
 
   // Open the smart lock
   open() {
-    return this.send_command(2);
+    if (this.lock_status_id === 4) {
+      return Promise.resolve();
+    }
+    return this.send_command(2).then(() => {
+      return this.await_event('status:open');
+    });
   }
 
   // Send a COMMAND message with command/action ID <command_id> (0 = lock, 1 = unlock, 2 = open)
@@ -631,7 +678,7 @@ Key_Ble = class extends Event_Emitter {
   }
 
   on_message_fragment_received(message_fragment) {
-    var Message_Type, message_data_bytes;
+    var Message_Type, computed_authentication_value, message_authentication_value, message_data_bytes, message_security_counter;
     this.received_message_fragments.push(message_fragment);
     this.emit('received:fragment', message_fragment);
     if (message_fragment.is_last()) {
@@ -640,7 +687,17 @@ Key_Ble = class extends Event_Emitter {
       }, []);
       Message_Type = message_types_by_id[this.received_message_fragments[0].get_message_type_id()];
       if (Message_Type.is_secure()) {
-        [message_data_bytes, this.remote_security_counter] = crypt_data(message_data_bytes, Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
+        message_security_counter = byte_array_to_integer(message_data_bytes, -6, -4);
+        if (message_security_counter <= this.remote_security_counter) {
+          throw new Error('Received message contains invalid security counter');
+        }
+        message_authentication_value = message_data_bytes.slice(-4);
+        this.remote_security_counter = message_security_counter;
+        message_data_bytes = crypt_data(message_data_bytes.slice(0, -6), Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
+        computed_authentication_value = compute_authentication_value(message_data_bytes, Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
+        if (!arrays_are_equal(message_authentication_value, computed_authentication_value)) {
+          throw new Error('Received message contains invalid authentication value');
+        }
       }
       this.received_message_fragments = [];
       this.on_message_received(Message_Type.create(message_data_bytes));
@@ -651,12 +708,43 @@ Key_Ble = class extends Event_Emitter {
     }
   }
 
+  set_status_update_timer() {
+    clearTimeout(this.status_update_timer);
+    if (this.status_update_time > 0) {
+      return this.status_update_timer = setTimeout(() => {
+        this.request_status();
+      }, this.status_update_time * 1000);
+    }
+  }
+
   on_message_received(message) {
+    var lock_status_id, lock_status_string;
     this.emit('received:message', message);
     switch (message.__type__) {
       case Connection_Info_Message:
         this.user_id = message.data.user_id;
         this.remote_session_nonce = message.data.remote_session_nonce;
+        this.local_security_counter = 1;
+        this.remote_security_counter = 0;
+        break;
+      case Status_Info_Message:
+        lock_status_id = message.data.lock_status;
+        lock_status_string = {
+          0: 'locked',
+          1: 'active',
+          2: 'unlocked',
+          4: 'open'
+        }[lock_status_id];
+        this.emit('status_update', lock_status_id, lock_status_string);
+        if (this.lock_status_id !== lock_status_id) {
+          this.lock_status_id = lock_status_id;
+          this.emit(`status:${lock_status_string}`, lock_status_id, lock_status_string);
+          this.emit('status_change', lock_status_id, lock_status_string);
+        }
+        this.set_status_update_timer();
+        break;
+      case Status_Changed_Notification_Message:
+        this.request_status();
     }
     this.emit(`received:message:${message.label}`, message);
   }
@@ -693,13 +781,13 @@ Key_Ble = class extends Event_Emitter {
         padded_data = padded_array(message.data_bytes, generic_ceil(message.data_bytes.length, 15, 8), 0);
         crypt_data(padded_data, message.id, this.remote_session_nonce, this.local_security_counter, this.user_key);
         message_data_bytes = concatenated_array(crypt_data(padded_data, message.id, this.remote_session_nonce, this.local_security_counter, this.user_key), integer_to_byte_array(this.local_security_counter, 2), compute_authentication_value(padded_data, message.id, this.remote_session_nonce, this.local_security_counter, this.user_key));
+        this.local_security_counter++;
       } else {
         message_data_bytes = message.data_bytes;
       }
       message_fragments = split_into_chunks(concatenated_array([message.id], message_data_bytes), 15).map(function(fragment_bytes, index, chunks) {
         return Message_Fragment.create(concatenated_array([(chunks.length - 1 - index) + (index === 0 ? 0x80 : 0x00)], padded_array(fragment_bytes, 15, 0)));
       });
-      this.local_security_counter++;
       return this.send_message_fragments(message_fragments);
     });
   }
@@ -713,6 +801,7 @@ Key_Ble = class extends Event_Emitter {
     }).then((peripheral1) => {
       var communication_service;
       this.peripheral = peripheral1;
+      this.peripheral.set_auto_disconnect_time(this.auto_disconnect_time * 1000);
       this.peripheral.on('connected', () => {
         this.state = state.connected;
         this.emit('connected');
@@ -746,19 +835,29 @@ Key_Ble = class extends Event_Emitter {
       local_session_nonce: this.local_session_nonce
     })).then(() => {
       return this.await_message('CONNECTION_INFO');
+    }).then(() => {
+      this.state = state.nonces_exchanged;
+      this.emit('nonces_exchanged');
     });
   }
 
   request_status() {
     return this.send_message(Status_Request_Message.create()).then(() => {
-      return this.await_message('STATUS_INFO');
+      return this.await_event('status_update');
+    });
+  }
+
+  ensure_disconnected() {
+    if (this.state < state.connected) {
+      return Promise.resolve();
+    }
+    return this.send_message(Close_Connection_Message.create()).then(() => {
+      return this.peripheral.disconnect();
     });
   }
 
   disconnect() {
-    return this.send_message(Close_Connection_Message.create()).then(() => {
-      return this.peripheral.disconnect();
-    });
+    return this.ensure_disconnected();
   }
 
 };

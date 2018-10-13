@@ -68,22 +68,41 @@ process_input = function(...input_sources) {
   var input_handler, ref;
   ref = input_sources, [...input_sources] = ref, [input_handler] = splice.call(input_sources, -1);
   return new Promise(function(resolve, reject) {
-    var i, input_element, input_source, len, readline, readline_interface;
+    var closed, handle_next, inactive, input_source, input_strings, readline, readline_interface;
     input_source = input_sources.find(function(input_source) {
       return is_valid_value(input_source) && (!is_array(input_source) || (input_source.length > 0));
     });
     if (is_string(input_source)) {
-      // The input source is a single string; simply pass the string to the input handler
-      input_handler(input_source);
-      resolve();
-    } else if (is_array(input_source)) {
-// The input source is a non-empty array; pass all elements of the array to the input handler
-      for (i = 0, len = input_source.length; i < len; i++) {
-        input_element = input_source[i];
-        input_handler(input_element);
-      }
-      resolve();
+      input_source = [input_source];
+    }
+    if (is_array(input_source)) {
+      handle_next = function() {
+        if (input_source.length === 0) {
+          resolve();
+        } else {
+          Promise.resolve(input_handler(input_source.shift())).then(function() {
+            return handle_next();
+          });
+        }
+      };
+      handle_next();
     } else {
+      input_strings = [];
+      closed = false;
+      inactive = true;
+      handle_next = function() {
+        if (inactive) {
+          if (input_strings.length > 0) {
+            inactive = false;
+            Promise.resolve(input_handler(input_strings.shift())).then(function() {
+              inactive = true;
+              return handle_next();
+            });
+          } else if (closed) {
+            resolve();
+          }
+        }
+      };
       // The input source is expected to be a readable stream; read the stream line by line and pass the stripped lines to the input handler
       readline = require('readline');
       readline_interface = readline.createInterface({
@@ -91,10 +110,13 @@ process_input = function(...input_sources) {
         output: null
       });
       readline_interface.on('line', function(input_line) {
-        input_handler(input_line.trim());
+        if (input_strings.push(input_line.trim()) === 1) {
+          handle_next();
+        }
       });
       readline_interface.on('close', function() {
-        resolve();
+        closed = true;
+        handle_next();
       });
     }
   });

@@ -23,9 +23,9 @@ At a price of just about 60€, these Smart Locks offer an excellent price/perfo
 
 ## Installation
 
-With Node.js/npm installed, you can install *keyble* globally by running on a command line:
+With Node.js/npm installed, you can install/update *keyble* globally by running on a command line:
 
-    $ npm install -g keyble --unsafe-perm
+    $ npm install --update -g keyble --unsafe-perm
 
 The [`--unsafe-perm`](https://docs.npmjs.com/misc/config#unsafe-perm) flag seems to be necessary in order to install *keyble* globally via the `-g` flag (at least under Linux). If installing locally, without the `-g` flag, it works fine without the `--unsafe-perm` flag. This issue seems to be caused by one of *keyble*'s dependencies (see [#707](https://github.com/noble/noble/issues/707)).
 
@@ -38,7 +38,7 @@ If using Linux...
 
 ## Command line tools
 
-## keyble-registeruser
+### keyble-registeruser
 
 In order to actually control an *eqiva eQ-3 Bluetooth Smart Lock*, a user ID and the corresponding 128-bit user key is required.
 Since the original app provides no way to get these informations, it is necessary to first register a new user, using the information encoded in the QR-Code of the "*Key Card*"s that ship with the lock.
@@ -70,7 +70,7 @@ Usage example:
     Setting user name to "John"...
     User name changed, finished registering user.
 
-### Piping data into keyble-registeruser
+#### Piping data into keyble-registeruser
 
 If the QR-Code data is not passed on the command line via the `--qr_code_data/-q` argument, *keyble-registeruser* will read the data from STDIN instead. This allows simply piping the output of a QR-Code-Reader into *keyble-registeruser*.
 
@@ -86,7 +86,7 @@ For example, if you have a Webcam and the *[zbar](http://zbar.sourceforge.net/)*
 
 The above command is the recommended way to register a new user under Linux.
 
-## keyble-sendcommand
+### keyble-sendcommand
 
 With a valid user ID and user key, as obtained by running the *keyble-registeruser* tool, we can now actually control (=open/lock/unlock) the Smart Lock.
 
@@ -119,7 +119,7 @@ Usage example:
     Sending command "open"...
     Command "open" sent.
 
-### Piping data into keyble-sendcommand
+#### Piping data into keyble-sendcommand
 
 If the actual command/action ("open"/"lock"/"unlock") is not passed on the command line via the --command/-c argument, *keyble-sendcommand* will read the command(s) from STDIN instead. This allows piping the output of another program into *keyble-sendcommand*.
 
@@ -136,3 +136,48 @@ Be aware that the vendor might *(at least temporarily)* render this software use
 This software was developed against firmware version 1.7, which is the latest firmware version as of now *(2018/09/05)*.
 
 If the vendor releases a newer firmware version, better not instantly update the firmware; wait for confirmation that the new firmware version is safe.
+
+## API
+
+Beware that since *keyble* is still in early alpha state, the API is likely to still change a lot, probably with backwards-incompatible changes. Only a subset of the functionality has been documented yet, and only a few usage examples are provided.
+
+### Creating a *Key_Ble* instance
+
+    // Require the keyble module
+    var keyble = require("keyble");
+
+    // Create a new Key_Ble instance that represents one specific door lock
+    key_ble = new keyble.Key_Ble({
+        address: "01:23:45:67:89:ab", // The bluetooth MAC address of the door lock
+        user_id: 1, // The user ID
+        user_key: "0123456789abcdef0123456789abcdef", // The user-specific 128 bit AES key
+        auto_disconnect_time: 15, // After how many seconds of inactivity to auto-disconnect from the device (0 to disable)
+        status_update_time: 600 // Automatically check for status after this many seconds without status updates (0 to disable)
+    });
+    
+### Lock / Unlock / Open the door lock
+
+    // Lock the door
+    key_ble.lock()
+    .then( () => {
+        console.log("Door locked");
+    });
+
+    // Unlock the door
+    key_ble.unlock()
+    .then( () => {
+        console.log("Door unlocked");
+    });
+
+    // Open the door
+    key_ble.open()
+    .then( () => {
+        console.log("Door opened");
+    });
+
+### Listen for status changes
+
+    // Lock the door
+    key_ble.on("status_change", (new_status_id) => {
+        console.log("New status:", new_status_id);
+    });
