@@ -27,3 +27,7 @@
 ## v0.1.7 *(2018/10/13)*
 
 - Minor corrections
+
+## v0.1.8 *(2018/10/13)*
+
+- Yet another minor correction
