@@ -666,7 +666,7 @@ Key_Ble = class extends Event_Emitter {
       return Promise.resolve();
     }
     return this.send_command(2).then(() => {
-      return this.await_event('status:open');
+      return this.await_event('status:unlocked');
     });
   }
 

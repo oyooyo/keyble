@@ -23,18 +23,26 @@ At a price of just about 60€, these Smart Locks offer an excellent price/perfo
 
 ## Installation
 
+### Global installation
+
+By installing *keyble* globally, *keyble*'s command line tools are installed in your PATH, and are therefor available from everywhere.
+
 With Node.js/npm installed, you can install/update *keyble* globally by running on a command line:
 
-    $ npm install --update -g keyble --unsafe-perm
+    $ npm install --update --global --unsafe-perm keyble
 
-The [`--unsafe-perm`](https://docs.npmjs.com/misc/config#unsafe-perm) flag seems to be necessary in order to install *keyble* globally via the `-g` flag (at least under Linux). If installing locally, without the `-g` flag, it works fine without the `--unsafe-perm` flag. This issue seems to be caused by one of *keyble*'s dependencies (see [#707](https://github.com/noble/noble/issues/707)).
+The [`--unsafe-perm`](https://docs.npmjs.com/misc/config#unsafe-perm) flag seems to be necessary in order to install *keyble* globally via the `--global` flag (at least under Linux). If installing locally, without the `--global` flag, it works fine without the `--unsafe-perm` flag. This issue seems to be caused by one of *keyble*'s dependencies (see [#707](https://github.com/noble/noble/issues/707)).
+You will probably need to run the above command with *sudo*, at least if using Linux.
 
-### Linux
+### Local installation
 
-If using Linux...
+To install/update *keyble* as a library/dependency instead, execute:
 
-- you will probably need to run this command with *sudo*
-- please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux).
+    $ npm install --update --save keyble
+
+### Important remarks about using on Linux
+
+For using *keyble* on Linux, please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux).
 
 ## Command line tools
 
@@ -92,10 +100,11 @@ With a valid user ID and user key, as obtained by running the *keyble-registerus
 
 This is what the *keyble-sendcommand* tool is for.
 
-    usage: keyble-sendcommand [-h] --address ADDRESS --user_id
-                              USER_ID --user_key USER_KEY
-                              [--command {lock,open,unlock}]
-    
+    usage: keyble-sendcommand [-h] --address ADDRESS --user_id USER_ID --user_key
+                              USER_KEY [--auto_disconnect_time AUTO_DISCONNECT_TIME]
+                              [--status_update_time STATUS_UPDATE_TIME]
+                              [--command {lock,open,unlock,status}]
+                          
     
     Control (lock/unlock/open) an eqiva eQ-3 Bluetooth smart lock.
     
@@ -107,7 +116,14 @@ This is what the *keyble-sendcommand* tool is for.
                             The user ID
       --user_key USER_KEY, -k USER_KEY
                             The user key
-      --command {lock,open,unlock}, -c {lock,open,unlock}
+      --auto_disconnect_time AUTO_DISCONNECT_TIME, -adt AUTO_DISCONNECT_TIME
+                            The auto-disconnect time, in seconds. A value of 0 
+                            will deactivate auto-disconnect (usually not 
+                            recommended, drains battery) (default: 15)
+      --status_update_time STATUS_UPDATE_TIME, -sut STATUS_UPDATE_TIME, -t STATUS_UPDATE_TIME
+                            The status update time, in seconds. A value of 0 will 
+                            deactivate status updates (default: 600)
+      --command {lock,open,unlock,status}, -c {lock,open,unlock,status}
                             The command to perform. If not provided on the 
                             command line, the command(s) will be read as input 
                             lines from STDIN instead
@@ -116,12 +132,13 @@ Usage example:
 
     $ keyble-sendcommand --address 01:23:56:67:89:ab --user_id 1 --user_key ca78ad9b96131414359e5e7cecfd7f9e --command open
 
-    Sending command "open"...
-    Command "open" sent.
+    active
+    open
+    unlocked
 
 #### Piping data into keyble-sendcommand
 
-If the actual command/action ("open"/"lock"/"unlock") is not passed on the command line via the --command/-c argument, *keyble-sendcommand* will read the command(s) from STDIN instead. This allows piping the output of another program into *keyble-sendcommand*.
+If the actual command/action ("open"/"lock"/"unlock"/"status") is not passed on the command line via the --command/-c argument, *keyble-sendcommand* will read the command(s) from STDIN instead. This allows piping the output of another program into *keyble-sendcommand*.
 
 For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get install mosquitto-clients`)*, you could easily make your Smart Lock controllable via MQTT by running a command similar to this:
 

@@ -31,3 +31,7 @@
 ## v0.1.8 *(2018/10/13)*
 
 - Yet another minor correction
+
+## v0.1.9 *(2018/10/15)*
+
+- Opening the door via Key_Ble.open() no longer waits for the "OPENED" state to occur, but the "UNLOCKED" state. This is because the "OPENED" state apparently is not always being reported.

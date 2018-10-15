@@ -543,7 +543,7 @@ Key_Ble = class extends Event_Emitter
 		if (@lock_status_id is 4) then return Promise.resolve()
 		@send_command(2)
 		.then =>
-			@await_event 'status:open'
+			@await_event 'status:unlocked'
 
 	# Send a COMMAND message with command/action ID <command_id> (0 = lock, 1 = unlock, 2 = open)
 	send_command: (command_id) ->

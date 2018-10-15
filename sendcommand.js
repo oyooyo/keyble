@@ -52,7 +52,7 @@ if (require.main === module) {
     help: `The status update time, in seconds. A value of 0 will deactivate status updates (default: ${default_status_update_time})`
   });
   argument_parser.addArgument(['--command', '-c'], {
-    choices: ['lock', 'open', 'unlock'],
+    choices: ['lock', 'open', 'unlock', 'status'],
     required: false,
     type: 'string',
     help: 'The command to perform. If not provided on the command line, the command(s) will be read as input lines from STDIN instead'
