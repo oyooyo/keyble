@@ -239,4 +239,5 @@ A big thanks to everyone who helped developing and improving this software.
 
 Especially...
 
-- [Ircama](https://github.com/Ircama), whose feedback etc. was extremely useful.
+- [henfri](https://github.com/henfri), who provided lots of useful feedback and helped improving the code
+- [Ircama](https://github.com/Ircama), whose feedback etc. was also extremely helpful
