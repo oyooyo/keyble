@@ -155,6 +155,11 @@ For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get
 
 Assuming a MQTT broker with IP address 192.168.0.2, sending message "open" to the MQTT topic "door_lock/action" for example would then open the Smart Lock.
 
+In order to regularly publish the status one could execute this command regularly:
+    $ mosquitto_pub -h 192.168.0.2 -t "door_lock/action" -m $(keyble-sendcommand --address 01:23:56:67:89:ab --user_id 1 --user_key ca78ad9b96131414359e5e7cecfd7f9e --command status) 
+
+This would run *mosquitto_pub* and pass the result of *keyble-sendcommand --status* as the message (-m) 
+
 ## API
 
 Beware that since *keyble* is still in early alpha state, the API is likely to still change a lot, probably with backwards-incompatible changes. Only a subset of the functionality has been documented yet, and only a few usage examples are provided.
