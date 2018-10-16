@@ -35,3 +35,9 @@
 ## v0.1.9 *(2018/10/15)*
 
 - Opening the door via Key_Ble.open() no longer waits for the "OPENED" state to occur, but the "UNLOCKED" state. This is because the "OPENED" state apparently is not always being reported.
+
+## v0.1.10 *(2018/10/16)*
+
+- Improved description of the `--auto_disconnect_time` and `--status_update_time` arguments
+- Added `--timeout` argument and helper function keyble.utils.time_limit()
+- Increased the default for `--auto_disconnect_time` to 30 seconds

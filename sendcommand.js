@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 'use strict';
-var args, argument_parser, cli, default_auto_disconnect_time, default_status_update_time, key_ble, keyble;
+var args, argument_parser, cli, default_auto_disconnect_time, default_status_update_time, default_timeout_time, key_ble, keyble;
 
 // Command line tool for controlling (lock/unlock/open) eqiva eQ-3 Bluetooth smart locks
 
@@ -12,10 +12,13 @@ cli = require('./cli');
 keyble = require('./keyble');
 
 // The default auto-disconnect time, in seconds
-default_auto_disconnect_time = 15.0;
+default_auto_disconnect_time = 30.0;
 
 // The default status update time, in seconds
 default_status_update_time = 600.0;
+
+// The default timeout time, in seconds
+default_timeout_time = 45.0;
 
 // ----
 // MAIN
@@ -46,10 +49,15 @@ if (require.main === module) {
     defaultValue: default_auto_disconnect_time,
     help: `The auto-disconnect time. If connected to the lock, the connection will be automatically disconnected after this many seconds of inactivity, in order to save battery. A value of 0 will deactivate auto-disconnect (default: ${default_auto_disconnect_time})`
   });
-  argument_parser.addArgument(['--status_update_time', '-sut', '-t'], {
+  argument_parser.addArgument(['--status_update_time', '-sut'], {
     type: 'float',
     defaultValue: default_status_update_time,
     help: `The status update time. If no status information has been received for this many seconds, automatically connect to the lock and query the status. A value of 0 will deactivate status updates (default: ${default_status_update_time})`
+  });
+  argument_parser.addArgument(['--timeout', '-t'], {
+    type: 'float',
+    defaultValue: default_status_update_time,
+    help: `The timeout time. Commands must finish within this many seconds, otherwise there is an error. A value of 0 will deactivate timeouts (default: ${default_timeout_time})`
   });
   argument_parser.addArgument(['--command', '-c'], {
     choices: ['lock', 'open', 'unlock', 'status'],
@@ -69,7 +77,7 @@ if (require.main === module) {
     return console.log(status_string);
   });
   cli.process_input(args.command, process.stdin, function(command) {
-    return ((function() {
+    return keyble.utils.time_limit(((function() {
       switch (command) {
         case 'lock':
           return key_ble.lock();
@@ -82,7 +90,7 @@ if (require.main === module) {
         default:
           return Promise.reject(`Unknown command "${command}"`);
       }
-    })()).catch(function(error) {
+    })()), args.timeout * 1000).catch(function(error) {
       return console.error(`Error: ${error}`);
     });
   }).then(function() {

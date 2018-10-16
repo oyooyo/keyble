@@ -103,6 +103,7 @@ This is what the *keyble-sendcommand* tool is for.
     usage: keyble-sendcommand [-h] --address ADDRESS --user_id USER_ID --user_key
                               USER_KEY [--auto_disconnect_time AUTO_DISCONNECT_TIME]
                               [--status_update_time STATUS_UPDATE_TIME]
+                              [--timeout TIMEOUT]
                               [--command {lock,open,unlock,status}]
                           
     
@@ -117,12 +118,20 @@ This is what the *keyble-sendcommand* tool is for.
       --user_key USER_KEY, -k USER_KEY
                             The user key
       --auto_disconnect_time AUTO_DISCONNECT_TIME, -adt AUTO_DISCONNECT_TIME
-                            The auto-disconnect time, in seconds. A value of 0 
-                            will deactivate auto-disconnect (usually not 
-                            recommended, drains battery) (default: 15)
-      --status_update_time STATUS_UPDATE_TIME, -sut STATUS_UPDATE_TIME, -t STATUS_UPDATE_TIME
-                            The status update time, in seconds. A value of 0 will 
-                            deactivate status updates (default: 600)
+                            The auto-disconnect time. If connected to the lock, 
+                            the connection will be automatically disconnected 
+                            after this many seconds of inactivity, in order to 
+                            save battery. A value of 0 will deactivate 
+                            auto-disconnect (default: 30)
+      --status_update_time STATUS_UPDATE_TIME, -sut STATUS_UPDATE_TIME
+                            The status update time. If no status information has 
+                            been received for this many seconds, automatically 
+                            connect to the lock and query the status. A value of 
+                            0 will deactivate status updates (default: 600)
+      --timeout TIMEOUT, -t TIMEOUT
+                            The timeout time. Commands must finish within this 
+                            many seconds, otherwise there is an error. A value of 
+                            0 will deactivate timeouts (default: 40)
       --command {lock,open,unlock,status}, -c {lock,open,unlock,status}
                             The command to perform. If not provided on the 
                             command line, the command(s) will be read as input 
@@ -145,14 +154,6 @@ For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get
     $ mosquitto_sub -h 192.168.0.2 -t "door_lock/action" | keyble-sendcommand -a 01:23:56:67:89:ab -u 1 -k ca78ad9b96131414359e5e7cecfd7f9e
 
 Assuming a MQTT broker with IP address 192.168.0.2, sending message "open" to the MQTT topic "door_lock/action" for example would then open the Smart Lock.
-
-## Beware of firmware updates
-
-Be aware that the vendor might *(at least temporarily)* render this software useless with a future firmware update.
-
-This software was developed against firmware version 1.7, which is the latest firmware version as of now *(2018/09/05)*.
-
-If the vendor releases a newer firmware version, better not instantly update the firmware; wait for confirmation that the new firmware version is safe.
 
 ## API
 
@@ -223,3 +224,19 @@ write
     });
 
 to time-limit the open() action to 15000 milliseconds = 15 seconds.
+
+## Beware of firmware updates
+
+Be aware that the vendor might *(at least temporarily)* render this software useless with a future firmware update.
+
+This software was developed against firmware version 1.7, which is the latest firmware version as of now *(2018/09/05)*.
+
+If the vendor releases a newer firmware version, better not instantly update the firmware; wait for confirmation that the new firmware version is safe.
+
+## Acknowledgements
+
+A big thanks to everyone who helped developing and improving this software.
+
+Especially...
+
+- [Ircama](https://github.com/Ircama), whose feedback etc. was extremely useful.

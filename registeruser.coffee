@@ -14,7 +14,7 @@ keyble = require('./keyble')
 # MAIN
 # ----
 # Only execute the following code when run from the command line
-if require.main is module
+if (require.main is module)
 	# Parse the command line arguments
 	argument_parser = new cli.ArgumentParser
 		description: "Register users on eqiva eQ-3 Bluetooth smart locks."
