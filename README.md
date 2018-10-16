@@ -198,3 +198,28 @@ Beware that since *keyble* is still in early alpha state, the API is likely to s
     key_ble.on("status_change", (new_status_id) => {
         console.log("New status:", new_status_id);
     });
+
+### Timeouts for actions
+
+*keyble* currently does not allow passing timeout values when calling actions like `key_ble.open()` which return [*Javascript Promises*](https://developers.google.com/web/fundamentals/primers/promises). As a result, the returned promise will often stay in *pending* state indefinitely if there is a problem, for example if the device is not in range. As a kind of compromise, there is a small helper function `keyble.utils.time_limit` which instead allows settings timeouts for every *Promise*:
+
+    keyble.utils.time_limit(<promise>, <timeout_milliseconds>[, <timeout_error_message>])
+
+It basically works like this: Instead of something like
+
+    key_ble.open()
+    .then( () => {
+        console.log("Door opened");
+    });
+
+write
+
+    keyble.utils.time_limit(key_ble.open(), 15000)
+    .then( () => {
+        console.log("Door opened");
+    })
+    .catch( (error) => {
+        console.error("Error opening door!");
+    });
+
+to time-limit the open() action to 15000 milliseconds = 15 seconds.

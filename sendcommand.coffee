@@ -39,11 +39,11 @@ if require.main is module
 	argument_parser.addArgument ['--auto_disconnect_time', '-adt'],
 		type: 'float'
 		defaultValue: default_auto_disconnect_time
-		help: "The auto-disconnect time, in seconds. A value of 0 will deactivate auto-disconnect (usually not recommended, drains battery) (default: #{default_auto_disconnect_time})"
+		help: "The auto-disconnect time. If connected to the lock, the connection will be automatically disconnected after this many seconds of inactivity, in order to save battery. A value of 0 will deactivate auto-disconnect (default: #{default_auto_disconnect_time})"
 	argument_parser.addArgument ['--status_update_time', '-sut', '-t'],
 		type: 'float'
 		defaultValue: default_status_update_time
-		help: "The status update time, in seconds. A value of 0 will deactivate status updates (default: #{default_status_update_time})"
+		help: "The status update time. If no status information has been received for this many seconds, automatically connect to the lock and query the status. A value of 0 will deactivate status updates (default: #{default_status_update_time})"
 	argument_parser.addArgument ['--command', '-c'],
 		choices: ['lock', 'open', 'unlock', 'status']
 		required: false

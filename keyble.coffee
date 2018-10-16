@@ -715,6 +715,26 @@ parse_key_card_data = (key_card_data_string) ->
 	register_key: byte_array_formats(hex_string_to_byte_array(match[2]), ' ').short
 	serial: match[3]
 
+# Returns a promise that is a time-limited wrapper for promise <promise>. If the promise <promise> does not resolve within <time_limit> milliseconds, the promise is rejected
+time_limit_promise = (promise, time_limit, timeout_error_message) ->
+	if (time_limit is 0) then return promise
+	timeout_error_message = first_valid_value(timeout_error_message, "Promise did not resolve within #{time_limit} milliseconds")
+	new Promise (resolve, reject) ->
+		timeout = setTimeout ->
+				reject(timeout_error_message)
+				return
+			, time_limit
+		Promise.resolve(promise)
+		.then (promise_result) ->
+			clearTimeout(timeout)
+			resolve(promise_result)
+			return
+		.catch (promise_error) ->
+			clearTimeout(timeout)
+			reject(promise_error)
+			return
+		return
+
 # What this module exports
 module.exports =
 	Key_Ble: Key_Ble
@@ -722,3 +742,6 @@ module.exports =
 		parse: parse_key_card_data
 		pattern: key_card_data_pattern
 		regexp: key_card_data_regexp
+	utils:
+		time_limit: time_limit_promise
+

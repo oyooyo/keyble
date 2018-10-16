@@ -1,5 +1,5 @@
 'use strict';
-var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, arrays_are_equal, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, byte_array_to_integer, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, xor_array;
+var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, arrays_are_equal, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, byte_array_to_integer, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, time_limit_promise, xor_array;
 
 // Checks if <value> is an array. Returns true if it is an array, false otherwise
 is_array = function(value) {
@@ -894,6 +894,27 @@ parse_key_card_data = function(key_card_data_string) {
   };
 };
 
+// Returns a promise that is a time-limited wrapper for promise <promise>. If the promise <promise> does not resolve within <time_limit> milliseconds, the promise is rejected
+time_limit_promise = function(promise, time_limit, timeout_error_message) {
+  if (time_limit === 0) {
+    return promise;
+  }
+  timeout_error_message = first_valid_value(timeout_error_message, `Promise did not resolve within ${time_limit} milliseconds`);
+  return new Promise(function(resolve, reject) {
+    var timeout;
+    timeout = setTimeout(function() {
+      reject(timeout_error_message);
+    }, time_limit);
+    Promise.resolve(promise).then(function(promise_result) {
+      clearTimeout(timeout);
+      resolve(promise_result);
+    }).catch(function(promise_error) {
+      clearTimeout(timeout);
+      reject(promise_error);
+    });
+  });
+};
+
 // What this module exports
 module.exports = {
   Key_Ble: Key_Ble,
@@ -901,6 +922,9 @@ module.exports = {
     parse: parse_key_card_data,
     pattern: key_card_data_pattern,
     regexp: key_card_data_regexp
+  },
+  utils: {
+    time_limit: time_limit_promise
   }
 };
 
