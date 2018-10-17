@@ -94,7 +94,7 @@ This is what the *keyble-registeruser* tool is for.
 
 Usage example:
 
-    $ keyble-registeruser -n John -q M0123456789ABK0123456789ABCDEF0123456789ABCDEFNEQ1234567
+    keyble-registeruser -n John -q M0123456789ABK0123456789ABCDEF0123456789ABCDEFNEQ1234567
     
     Press and hold "Unlock" button until the yellow light flashes in order to enter pairing mode
     Registering user on Smart Lock with address "01:23:56:67:89:ab", card key "0123456789abcdef0123456789abcdef" and serial "NEQ1234567"...
@@ -108,7 +108,7 @@ If the QR-Code data is not passed on the command line via the `--qr_code_data/-q
 
 For example, if you have a Webcam and the *[zbar](http://zbar.sourceforge.net/)* tools installed *(`sudo apt-get install zbar-tools`)*, you can run:
 
-    $ zbarcam --raw | keyble-registeruser
+    zbarcam --raw | keyble-registeruser
     
     Press and hold "Unlock" button until the yellow light flashes in order to enter pairing mode
     Registering user on Smart Lock with address "01:23:56:67:89:ab", card key "0123456789abcdef0123456789abcdef" and serial "NEQ1234567"...
@@ -163,7 +163,7 @@ This is what the *keyble-sendcommand* tool is for.
 
 Usage example:
 
-    $ keyble-sendcommand --address 01:23:56:67:89:ab --user_id 1 --user_key ca78ad9b96131414359e5e7cecfd7f9e --command open
+    keyble-sendcommand --address 01:23:56:67:89:ab --user_id 1 --user_key ca78ad9b96131414359e5e7cecfd7f9e --command open
 
     MOVING
     OPEN
@@ -175,7 +175,7 @@ If the actual command/action ("open"/"lock"/"unlock"/"status") is not passed on 
 
 For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get install mosquitto-clients`)*, you could easily make your Smart Lock controllable via MQTT by running a command similar to this:
 
-    $ mosquitto_sub -h 192.168.0.2 -t "door_lock/action" | keyble-sendcommand -a 01:23:56:67:89:ab -u 1 -k ca78ad9b96131414359e5e7cecfd7f9e | mosquitto_pub -h 192.168.0.2 -l -r -t "door_lock/status"
+    mosquitto_sub -h 192.168.0.2 -t "door_lock/action" | keyble-sendcommand -a 01:23:56:67:89:ab -u 1 -k ca78ad9b96131414359e5e7cecfd7f9e | mosquitto_pub -h 192.168.0.2 -l -r -t "door_lock/status"
 
 Assuming a MQTT broker with IP address 192.168.0.2, sending message "open" to the MQTT topic "door_lock/action" for example would then open the Smart Lock; changes to the door lock status would be automatically published as retained messages to MQTT topic "door_lock/status".
 
