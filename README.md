@@ -29,20 +29,44 @@ By installing *keyble* globally, *keyble*'s command line tools are installed in 
 
 With Node.js/npm installed, you can install/update *keyble* globally by running on a command line:
 
-    $ npm install --update --global --unsafe-perm keyble
+    npm install --update --global --unsafe-perm keyble
 
 The [`--unsafe-perm`](https://docs.npmjs.com/misc/config#unsafe-perm) flag seems to be necessary in order to install *keyble* globally via the `--global` flag (at least under Linux). If installing locally, without the `--global` flag, it works fine without the `--unsafe-perm` flag. This issue seems to be caused by one of *keyble*'s dependencies (see [#707](https://github.com/noble/noble/issues/707)).
 You will probably need to run the above command with *sudo*, at least if using Linux.
+
+*keyble* relies on a Node.js Bluetooth library called [*noble*](https://github.com/noble/noble/). If you have any problems installing/running *keyble*, chances are they are related to *noble* - therefor, it is generally advisable to read [the documentation on installing *noble*](https://github.com/noble/noble#prerequisites) if you witness any problems installing *keyble*.
+
+In particular, please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux) if running on Linux.
 
 ### Local installation
 
 To install/update *keyble* as a library/dependency instead, execute:
 
-    $ npm install --update --save keyble
+    npm install --update --save keyble
 
-### Important remarks about using on Linux
+### Complete, step-by-step installation instructions for Debian-based Linuxes, especially for Raspberry Pi running Raspbian
 
-For using *keyble* on Linux, please read [these remarks about *"Running without root/sudo"*](https://github.com/noble/noble#running-on-linux).
+The Raspberry Pi is probably the most popular platform to run *keyble* on, so I decided to provide complete, step-by-step installation instructions for that platform.
+These instructions should, however, work on all other Debian-based Linuxes (like Ubuntu) as well.
+
+    # (Optional, but recommended) Fully update/upgrade system
+    sudo apt-get -y update && sudo apt-get -y dist-upgrade
+    
+    # Install Node.js v8
+    wget -qO- https://deb.nodesource.com/setup_8.x | sudo -E bash -
+    sudo apt-get install -y build-essential nodejs
+    
+    # Make sure required libraries for Bluetooth are installed
+    sudo apt-get -y install bluetooth bluez libbluetooth-dev libudev-dev
+    
+    # Install keyble
+    sudo npm install --update --global --unsafe-perm keyble
+    
+    # (Optional, but recommended) Allow keyble to be run without sudo
+    sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
+    
+    # (Optional, but recommended) Install tools for controlling via MQTT
+    sudo apt-get -y install mosquitto-clients
 
 ## Command line tools
 
@@ -141,9 +165,9 @@ Usage example:
 
     $ keyble-sendcommand --address 01:23:56:67:89:ab --user_id 1 --user_key ca78ad9b96131414359e5e7cecfd7f9e --command open
 
-    active
-    open
-    unlocked
+    MOVING
+    OPEN
+    UNLOCKED
 
 #### Piping data into keyble-sendcommand
 
