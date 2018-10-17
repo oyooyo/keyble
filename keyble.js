@@ -642,11 +642,11 @@ Key_Ble = class extends Event_Emitter {
 
   // Lock the smart lock
   lock() {
-    if (this.lock_status_id === 0) {
+    if (this.lock_status_id === 3) {
       return Promise.resolve();
     }
     return this.send_command(0).then(() => {
-      return this.await_event('status:locked');
+      return this.await_event('status:LOCKED');
     });
   }
 
@@ -656,7 +656,7 @@ Key_Ble = class extends Event_Emitter {
       return Promise.resolve();
     }
     return this.send_command(1).then(() => {
-      return this.await_event('status:unlocked');
+      return this.await_event('status:UNLOCKED');
     });
   }
 
@@ -666,7 +666,7 @@ Key_Ble = class extends Event_Emitter {
       return Promise.resolve();
     }
     return this.send_command(2).then(() => {
-      return this.await_event('status:unlocked');
+      return this.await_event('status:OPENED');
     });
   }
 
@@ -730,10 +730,11 @@ Key_Ble = class extends Event_Emitter {
       case Status_Info_Message:
         lock_status_id = message.data.lock_status;
         lock_status_string = {
-          0: 'locked',
-          1: 'active',
-          2: 'unlocked',
-          4: 'open'
+          0: 'UNKNOWN',
+          1: 'MOVING',
+          2: 'UNLOCKED',
+          3: 'LOCKED',
+          4: 'OPENED'
         }[lock_status_id];
         this.emit('status_update', lock_status_id, lock_status_string);
         if (this.lock_status_id !== lock_status_id) {

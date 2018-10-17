@@ -56,7 +56,7 @@ if (require.main === module) {
   });
   argument_parser.addArgument(['--timeout', '-t'], {
     type: 'float',
-    defaultValue: default_status_update_time,
+    defaultValue: default_timeout_time,
     help: `The timeout time. Commands must finish within this many seconds, otherwise there is an error. A value of 0 will deactivate timeouts (default: ${default_timeout_time})`
   });
   argument_parser.addArgument(['--command', '-c'], {

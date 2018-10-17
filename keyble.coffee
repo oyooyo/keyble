@@ -526,24 +526,24 @@ Key_Ble = class extends Event_Emitter
 
 	# Lock the smart lock
 	lock: ->
-		if (@lock_status_id is 0) then return Promise.resolve()
+		if (@lock_status_id is 3) then return Promise.resolve()
 		@send_command(0)
 		.then =>
-			@await_event 'status:locked'
+			@await_event 'status:LOCKED'
 
 	# Unlock the smart lock
 	unlock: ->
 		if (@lock_status_id is 2) then return Promise.resolve()
 		@send_command(1)
 		.then =>
-			@await_event 'status:unlocked'
+			@await_event 'status:UNLOCKED'
 
 	# Open the smart lock
 	open: ->
 		if (@lock_status_id is 4) then return Promise.resolve()
 		@send_command(2)
 		.then =>
-			@await_event 'status:unlocked'
+			@await_event 'status:OPENED'
 
 	# Send a COMMAND message with command/action ID <command_id> (0 = lock, 1 = unlock, 2 = open)
 	send_command: (command_id) ->
@@ -591,7 +591,13 @@ Key_Ble = class extends Event_Emitter
 				@remote_security_counter = 0
 			when Status_Info_Message
 				lock_status_id = message.data.lock_status
-				lock_status_string = {0:'locked', 1:'active', 2:'unlocked', 4:'open'}[lock_status_id]
+				lock_status_string = {
+					0:'UNKNOWN',
+					1:'MOVING',
+					2:'UNLOCKED',
+					3:'LOCKED',
+					4:'OPENED',
+				}[lock_status_id]
 				@emit 'status_update', lock_status_id, lock_status_string
 				if (@lock_status_id isnt lock_status_id)
 					@lock_status_id = lock_status_id

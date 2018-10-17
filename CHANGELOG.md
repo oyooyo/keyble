@@ -41,3 +41,8 @@
 - Improved description of the `--auto_disconnect_time` and `--status_update_time` arguments
 - Added `--timeout` argument and helper function keyble.utils.time_limit()
 - Increased the default for `--auto_disconnect_time` to 30 seconds
+
+## v0.1.11 *(2018/10/17)*
+
+- Corrected wrong default value for the --timeout argument
+- Corrected and renamed the various statuses to "UNKNOWN", "MOVING", "UNLOCKED", "LOCKED" and "OPENED"

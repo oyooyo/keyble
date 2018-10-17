@@ -49,7 +49,7 @@ if (require.main is module)
 		help: "The status update time. If no status information has been received for this many seconds, automatically connect to the lock and query the status. A value of 0 will deactivate status updates (default: #{default_status_update_time})"
 	argument_parser.addArgument ['--timeout', '-t'],
 		type: 'float'
-		defaultValue: default_status_update_time
+		defaultValue: default_timeout_time
 		help: "The timeout time. Commands must finish within this many seconds, otherwise there is an error. A value of 0 will deactivate timeouts (default: #{default_timeout_time})"
 	argument_parser.addArgument ['--command', '-c'],
 		choices: ['lock', 'open', 'unlock', 'status']
