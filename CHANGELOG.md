@@ -46,3 +46,8 @@
 
 - Corrected wrong default value for the --timeout argument
 - Corrected and renamed the various statuses to "UNKNOWN", "MOVING", "UNLOCKED", "LOCKED" and "OPENED"
+
+## v0.1.12 *(2018/10/17)*
+
+- Improved documentation
+- Minor changes

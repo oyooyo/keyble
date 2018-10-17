@@ -1,12 +1,14 @@
 # keyble
 
-*keyble* is a set of command line tools for controlling/interfacing with [eqiva eQ-3 Bluetooth Smart Lock](https://www.eq-3.com/products/eqiva/bluetooth-smart-lock.html)s.
+*keyble* is a set of command line tools for controlling/interfacing with [eQ-3 eqiva Bluetooth Smart Lock](https://www.eq-3.com/products/eqiva/bluetooth-smart-lock.html)s.
 
 At a price of just about 60€, these Smart Locks offer an excellent price/performance ratio. But until now, these smart locks could only be controlled using the vendor's official Smartphone app, and could not be integrated into existing smart home systems.
 
+If you intend to use *keyble* to control an eqiva Bluetooth Smart Lock, you might also be interested in the cheap [eQ-3 eqiva Bluetooth Smart Radiator Thermostat](https://www.eq-3.com/products/eqiva/bluetooth-smart-radiator-thermostat.html)s from the same vendor. I wrote [a similar tool for controlling eQ-3 eqiva Bluetooth radiator thermostats](https://github.com/oyooyo/nixfilter-rtble) that works almost identical to *keyble*.
+
 ## Current status
 
-*keyble* is currently in an early alpha state:
+*keyble* is still in an early state:
 
 - Only the most basic features are currently implemented:
     - Registering new users
@@ -72,7 +74,7 @@ These instructions should, however, work on all other Debian-based Linuxes (like
 
 ### keyble-registeruser
 
-In order to actually control an *eqiva eQ-3 Bluetooth Smart Lock*, a user ID and the corresponding 128-bit user key is required.
+In order to actually control an *eQ-3 eqiva Bluetooth Smart Lock*, a user ID and the corresponding 128-bit user key is required.
 Since the original app provides no way to get these informations, it is necessary to first register a new user, using the information encoded in the QR-Code of the "*Key Card*"s that ship with the lock.
 
 This is what the *keyble-registeruser* tool is for.
@@ -81,7 +83,7 @@ This is what the *keyble-registeruser* tool is for.
                                [--qr_code_data QR_CODE_DATA]
     
     
-    Register users on eqiva eQ-3 Bluetooth smart locks.
+    Register users on eQ-3 eqiva Bluetooth smart locks.
     
     Optional arguments:
       -h, --help            Show this help message and exit.
@@ -131,7 +133,7 @@ This is what the *keyble-sendcommand* tool is for.
                               [--command {lock,open,unlock,status}]
                           
     
-    Control (lock/unlock/open) an eqiva eQ-3 Bluetooth smart lock.
+    Control (lock/unlock/open) an eQ-3 eqiva Bluetooth smart lock.
     
     Optional arguments:
       -h, --help            Show this help message and exit.

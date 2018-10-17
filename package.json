@@ -1,7 +1,7 @@
 {
   "name": "keyble",
-  "version": "0.1.11",
-  "description": "Command line tools and library for controlling eqiva eQ-3 Bluetooth smart locks",
+  "version": "0.1.12",
+  "description": "Command line tools and library for controlling eQ-3 eqiva Bluetooth smart locks",
   "main": "keyble.js",
   "bin": {
     "keyble-sendcommand": "./sendcommand.js",

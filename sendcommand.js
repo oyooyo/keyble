@@ -3,12 +3,12 @@
 'use strict';
 var args, argument_parser, cli, default_auto_disconnect_time, default_status_update_time, default_timeout_time, key_ble, keyble;
 
-// Command line tool for controlling (lock/unlock/open) eqiva eQ-3 Bluetooth smart locks
+// Command line tool for controlling (lock/unlock/open) eQ-3 eqiva Bluetooth smart locks
 
 // Import/Require the local "cli" module that provides some useful functions for CLI scripts
 cli = require('./cli');
 
-// Import/Require the "keyble" module that provides a library for the eqiva eQ-3 Bluetooth smart locks
+// Import/Require the "keyble" module that provides a library for the eQ-3 eqiva Bluetooth smart locks
 keyble = require('./keyble');
 
 // The default auto-disconnect time, in seconds
@@ -27,7 +27,7 @@ default_timeout_time = 45.0;
 if (require.main === module) {
   // Parse the command line arguments
   argument_parser = new cli.ArgumentParser({
-    description: 'Control (lock/unlock/open) an eqiva eQ-3 Bluetooth smart lock.'
+    description: 'Control (lock/unlock/open) an eQ-3 eqiva Bluetooth smart lock.'
   });
   argument_parser.addArgument(['--address', '-a'], {
     required: true,

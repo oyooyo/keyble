@@ -570,7 +570,7 @@ state = {
   secured: 3
 };
 
-// A class that represents the eqiva eQ-3 Bluetooth smart lock
+// A class that represents the eQ-3 eqiva Bluetooth smart lock
 Key_Ble = class extends Event_Emitter {
   constructor(options) {
     super();
@@ -863,10 +863,10 @@ Key_Ble = class extends Event_Emitter {
 
 };
 
-// The pattern of the data encoded in the QR-Code on the "Key Card"s of the eqiva eQ-3 Bluetooth smart locks, as a string
+// The pattern of the data encoded in the QR-Code on the "Key Card"s of the eQ-3 eqiva Bluetooth smart locks, as a string
 key_card_data_pattern = '^M([0-9A-F]{12})K([0-9A-F]{32})([0-9A-Z]{10})$';
 
-// The pattern of the data encoded in the QR-Code on the "Key Card"s of the eqiva eQ-3 Bluetooth smart locks, as a regular expression/RegExp
+// The pattern of the data encoded in the QR-Code on the "Key Card"s of the eQ-3 eqiva Bluetooth smart locks, as a regular expression/RegExp
 key_card_data_regexp = new RegExp(key_card_data_pattern);
 
 // Convert byte array <byte_array> into several formats/represenations. Returns an array with "buffer" (the byte array as a Buffer instance), "array" (the original byte array), "short" (the byte array as a short hexadecimal string without any non-hexadecimal characters) and "long" (the byte array as a long hexadecimal string, where the bytes are separated by string <long_format_separator> (default: ' ')) properties
@@ -881,7 +881,7 @@ byte_array_formats = function(byte_array, long_format_separator) {
   };
 };
 
-// Parse the data string encoded in the QR-Code of the "Key Card"s of the eqiva eQ-3 Bluetooth smart locks. Returns an object with "address", "register_key" and "serial" properties
+// Parse the data string encoded in the QR-Code of the "Key Card"s of the eQ-3 eqiva Bluetooth smart locks. Returns an object with "address", "register_key" and "serial" properties
 parse_key_card_data = function(key_card_data_string) {
   var match;
   match = key_card_data_string.trim().match(key_card_data_regexp);
