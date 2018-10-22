@@ -7,6 +7,9 @@ After = network-online.target
 Type=simple
 ExecStart=/usr/local/bin/Smartlock.sh
 Restart=always
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty11
 
 [Install]
 WantedBy=multi-user.target
