@@ -1,5 +1,5 @@
 'use strict';
-var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, arrays_are_equal, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, byte_array_to_integer, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, time_limit_promise, xor_array;
+var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, arrays_are_equal, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, byte_array_to_integer, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_communication, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, time_limit_promise, xor_array;
 
 // Checks if <value> is an array. Returns true if it is an array, false otherwise
 is_array = function(value) {
@@ -429,6 +429,9 @@ crypt_data = function(data, message_type_id, session_open_nonce, security_counte
   return xor_array(data, xor_data);
 };
 
+// Debug output function for keyble Bluetooth communication
+debug_communication = require('debug')('keyble:communication');
+
 // Debug output function for keyble events
 debug_events = require('debug')('keyble:events');
 
@@ -720,6 +723,8 @@ Key_Ble = class extends Event_Emitter {
   on_message_received(message) {
     var lock_status_id, lock_status_string;
     this.emit('received:message', message);
+    this.emit(`received:message:${message.label}`, message);
+    debug_communication(`Received message of type ${message.label}, data bytes <${byte_array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
     switch (message.__type__) {
       case Connection_Info_Message:
         this.user_id = message.data.user_id;
@@ -747,7 +752,6 @@ Key_Ble = class extends Event_Emitter {
       case Status_Changed_Notification_Message:
         this.request_status();
     }
-    this.emit(`received:message:${message.label}`, message);
   }
 
   send_message_fragment(message_fragment) {
@@ -778,6 +782,7 @@ Key_Ble = class extends Event_Emitter {
   send_message(message) {
     return (message.is_secure() ? this.ensure_nonces_exchanged() : this.ensure_connected()).then(() => {
       var message_data_bytes, message_fragments, padded_data;
+      debug_communication(`Sending message of type ${message.label}, data bytes <${byte_array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
       if (message.is_secure()) {
         padded_data = padded_array(message.data_bytes, generic_ceil(message.data_bytes.length, 15, 8), 0);
         crypt_data(padded_data, message.id, this.remote_session_nonce, this.local_security_counter, this.user_key);

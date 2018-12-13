@@ -315,6 +315,9 @@ crypt_data = (data, message_type_id, session_open_nonce, security_counter, key) 
 		xor_data,
 	)
 
+# Debug output function for keyble Bluetooth communication
+debug_communication = require('debug')('keyble:communication')
+
 # Debug output function for keyble events
 debug_events = require('debug')('keyble:events')
 
@@ -583,6 +586,8 @@ Key_Ble = class extends Event_Emitter
 
 	on_message_received: (message) ->
 		@emit 'received:message', message
+		@emit "received:message:#{message.label}", message
+		debug_communication "Received message of type #{message.label}, data bytes <#{byte_array_to_hex_string(message.data_bytes, ' ')}>, data #{JSON.stringify(message.data)}"
 		switch message.__type__
 			when Connection_Info_Message
 				@user_id = message.data.user_id
@@ -606,7 +611,6 @@ Key_Ble = class extends Event_Emitter
 				@set_status_update_timer()
 			when Status_Changed_Notification_Message
 				@request_status()
-		@emit "received:message:#{message.label}", message
 		return
 
 	send_message_fragment: (message_fragment) ->
@@ -630,6 +634,7 @@ Key_Ble = class extends Event_Emitter
 	send_message: (message) ->
 		(if message.is_secure() then @ensure_nonces_exchanged() else @ensure_connected())
 		.then =>
+			debug_communication "Sending message of type #{message.label}, data bytes <#{byte_array_to_hex_string(message.data_bytes, ' ')}>, data #{JSON.stringify(message.data)}"
 			if message.is_secure()
 				padded_data = padded_array(message.data_bytes, generic_ceil(message.data_bytes.length, 15, 8), 0)
 				crypt_data(padded_data, message.id, @remote_session_nonce, @local_security_counter, @user_key)

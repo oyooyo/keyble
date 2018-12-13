@@ -51,3 +51,8 @@
 
 - Improved documentation
 - Minor changes
+
+## v0.1.13 *(2018/12/13)*
+
+- Added keyble:communication debug output
+- Removed file package-lock.json
