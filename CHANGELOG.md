@@ -56,3 +56,8 @@
 
 - Added keyble:communication debug output
 - Removed file package-lock.json
+
+## v0.1.14 *(2018/12/25)*
+
+- Added a little more debug output
+- Updated dependencies to latest versions

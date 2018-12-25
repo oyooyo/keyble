@@ -1,5 +1,5 @@
 'use strict';
-var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, arrays_are_equal, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, byte_array_to_integer, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_communication, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, time_limit_promise, xor_array;
+var Answer_With_Security_Message, Answer_Without_Security_Message, Close_Connection_Message, Command_Message, Connection_Info_Message, Connection_Request_Message, Event_Emitter, Extendable, Fragment_Ack_Message, Key_Ble, Message, Message_Fragment, Pairing_Request_Message, Status_Changed_Notification_Message, Status_Info_Message, Status_Request_Message, User_Info_Message, User_Name_Set_Message, arrays_are_equal, bit_is_set, buffer_to_byte_array, byte_array_formats, byte_array_to_hex_string, byte_array_to_integer, canonicalize_hex_string, compute_authentication_value, compute_nonce, concatenated_array, convert_to_byte_array, create_array_of_length, create_random_byte, create_random_byte_array, create_random_integer, crypt_data, debug_communication, debug_events, dictify_array, encrypt_aes_ecb, extract_byte, first_valid_value, generic_ceil, hex_string_to_byte_array, integer_to_byte_array, integer_to_zero_prefixed_hex_string, is_array, is_buffer, is_function, is_of_type, is_string, is_valid_value, key_card_data_pattern, key_card_data_regexp, message_type, message_types, message_types_by_id, mixin_factory, mixin_own, padded_array, parse_key_card_data, simble, split_into_chunks, state, string_to_utf8_byte_array, time_limit_promise, utf8_byte_array_to_string, xor_array;
 
 // Checks if <value> is an array. Returns true if it is an array, false otherwise
 is_array = function(value) {
@@ -171,6 +171,11 @@ Command_Message = message_type({
   label: 'COMMAND',
   encode: function(data) {
     return [data.command_id];
+  },
+  properties: {
+    command_id: function() {
+      return this.data_bytes[0];
+    }
   }
 });
 
@@ -296,6 +301,14 @@ Connection_Request_Message = message_type({
   label: 'CONNECTION_REQUEST',
   encode: function(data) {
     return concatenated_array([data.user_id], data.local_session_nonce);
+  },
+  properties: {
+    user_id: function() {
+      return this.data_bytes[0];
+    },
+    local_session_nonce: function() {
+      return this.data_bytes.slice(1, 9);
+    }
   }
 });
 
@@ -445,6 +458,11 @@ Fragment_Ack_Message = message_type({
   label: 'FRAGMENT_ACK',
   encode: function(data) {
     return [data.fragment_id];
+  },
+  properties: {
+    fragment_id: function() {
+      return this.data_bytes[0];
+    }
   }
 });
 
@@ -509,7 +527,15 @@ Answer_With_Security_Message = message_type({
 // Java class "de.eq3.ble.key.android.a.a.f" in original app
 Answer_Without_Security_Message = message_type({
   id: 0x01,
-  label: 'ANSWER_WITHOUT_SECURITY'
+  label: 'ANSWER_WITHOUT_SECURITY',
+  properties: {
+    a: function() {
+      return (this.data_bytes[0] & 0x80) === 0;
+    },
+    b: function() {
+      return (this.data_bytes[0] & 0x81) === 1;
+    }
+  }
 });
 
 // This class represents "PAIRING_REQUEST" messages
@@ -519,6 +545,20 @@ Pairing_Request_Message = message_type({
   label: 'PAIRING_REQUEST',
   encode: function(data) {
     return concatenated_array([data.user_id], padded_array(data.encrypted_pair_key, 22, 0), integer_to_byte_array(data.security_counter, 2), data.authentication_value);
+  },
+  properties: {
+    user_id: function() {
+      return this.data_bytes[0];
+    },
+    encrypted_pair_key: function() {
+      return this.data_bytes.slice(1, 23);
+    },
+    security_counter: function() {
+      return byte_array_to_integer(this.data_bytes, 23, 2);
+    },
+    authentication_value: function() {
+      return this.data_bytes.slice(25, 29);
+    }
   }
 });
 
@@ -529,8 +569,13 @@ Status_Request_Message = message_type({
   label: 'STATUS_REQUEST',
   encode: function(data) {
     var date;
-    date = new Date();
+    date = data.date;
     return [date.getFullYear() - 2000, date.getMonth() + 1, date.getDate(), date.getHours(), date.getMinutes(), date.getSeconds()];
+  },
+  properties: {
+    date: function() {
+      return new Date(this.data_bytes[0] + 2000, this.data_bytes[1] - 1, this.data_bytes[2], this.data_bytes[3], this.data_bytes[4], this.data_bytes[5]);
+    }
   }
 });
 
@@ -546,6 +591,11 @@ string_to_utf8_byte_array = function(string) {
   return buffer_to_byte_array(Buffer.from(string, 'utf8'));
 };
 
+// Convert UTF-8 encoded byte array <byte_array> to a String
+utf8_byte_array_to_string = function(byte_array) {
+  return Buffer.from(byte_array).toString('utf8');
+};
+
 // This class represents "USER_NAME_SET" messages; messages sent to the Smart Lock requesting to change a user name
 // Java class "de.eq3.ble.key.android.a.a.al" in original app
 User_Name_Set_Message = message_type({
@@ -553,6 +603,14 @@ User_Name_Set_Message = message_type({
   label: 'USER_NAME_SET',
   encode: function(data) {
     return concatenated_array([data.user_id], padded_array(string_to_utf8_byte_array(data.user_name), 20, 0));
+  },
+  properties: {
+    user_id: function() {
+      return this.data_bytes[0];
+    },
+    user_name: function() {
+      return utf8_byte_array_to_string(this.data_bytes.slice(1, this.data_bytes.indexOf(0, 1)));
+    }
   }
 });
 
@@ -722,9 +780,9 @@ Key_Ble = class extends Event_Emitter {
 
   on_message_received(message) {
     var lock_status_id, lock_status_string;
+    debug_communication(`Received message of type ${message.label}, data bytes <${byte_array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
     this.emit('received:message', message);
     this.emit(`received:message:${message.label}`, message);
-    debug_communication(`Received message of type ${message.label}, data bytes <${byte_array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
     switch (message.__type__) {
       case Connection_Info_Message:
         this.user_id = message.data.user_id;
@@ -848,7 +906,9 @@ Key_Ble = class extends Event_Emitter {
   }
 
   request_status() {
-    return this.send_message(Status_Request_Message.create()).then(() => {
+    return this.send_message(Status_Request_Message.create({
+      date: new Date()
+    })).then(() => {
       return this.await_event('status_update');
     });
   }

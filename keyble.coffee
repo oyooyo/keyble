@@ -111,6 +111,8 @@ Command_Message = message_type
 	label: 'COMMAND'
 	encode: (data) ->
 		[data.command_id]
+	properties:
+		command_id: -> @data_bytes[0]
 
 # Returns a new array obtained by concatenating all arrays passed as arguments
 concatenated_array = ->
@@ -218,6 +220,9 @@ Connection_Request_Message = message_type
 			[data.user_id],
 			data.local_session_nonce,
 		)
+	properties:
+		user_id: -> @data_bytes[0]
+		local_session_nonce: -> @data_bytes.slice(1, 9)
 
 # This class represents "STATUS_CHANGED_NOTIFICATION" messages
 # Java class "de.eq3.ble.key.android.a.a.ae" in original app
@@ -331,6 +336,8 @@ Fragment_Ack_Message = message_type
 	label: 'FRAGMENT_ACK'
 	encode: (data) ->
 		[data.fragment_id]
+	properties:
+		fragment_id: -> @data_bytes[0]
 
 # This class represents a message fragment. Bluetooth characteristics can only transfer a very limited number of bytes at once, so larger messages need to be split into several fragments/parts
 Message_Fragment = Extendable.extend
@@ -373,6 +380,9 @@ Answer_With_Security_Message = message_type
 Answer_Without_Security_Message = message_type
 	id: 0x01
 	label: 'ANSWER_WITHOUT_SECURITY'
+	properties:
+		a: -> ((@data_bytes[0] & 0x80) is 0)
+		b: -> ((@data_bytes[0] & 0x81) is 1)
 
 # This class represents "PAIRING_REQUEST" messages
 # Java class "de.eq3.ble.key.android.a.a.ac" in original app
@@ -386,6 +396,11 @@ Pairing_Request_Message = message_type
 			integer_to_byte_array(data.security_counter, 2),
 			data.authentication_value,
 		)
+	properties:
+		user_id: -> @data_bytes[0]
+		encrypted_pair_key: -> @data_bytes.slice(1, 23)
+		security_counter: -> byte_array_to_integer(@data_bytes, 23, 2)
+		authentication_value: -> @data_bytes.slice(25, 29)
 
 # This class represents "STATUS_REQUEST" messages; messages sent to the Smart Lock, informing the current date/time, and requesting status information
 # Java class "de.eq3.ble.key.android.a.a.ag" in original app
@@ -393,7 +408,7 @@ Status_Request_Message = message_type
 	id: 0x82
 	label: 'STATUS_REQUEST'
 	encode: (data) ->
-		date = new Date()
+		date = data.date
 		[
 			(date.getFullYear() - 2000)
 			(date.getMonth() + 1)
@@ -402,6 +417,15 @@ Status_Request_Message = message_type
 			date.getMinutes()
 			date.getSeconds()
 		]
+	properties:
+		date: -> (new Date(
+			(@data_bytes[0] + 2000),
+			(@data_bytes[1] - 1),
+			@data_bytes[2],
+			@data_bytes[3],
+			@data_bytes[4],
+			@data_bytes[5],
+		))
 
 # This class represents "USER_INFO" messages
 # Java class "de.eq3.ble.key.android.a.a.ah" in original app
@@ -413,6 +437,10 @@ User_Info_Message = message_type
 string_to_utf8_byte_array = (string) ->
 	buffer_to_byte_array(Buffer.from(string, 'utf8'))
 
+# Convert UTF-8 encoded byte array <byte_array> to a String
+utf8_byte_array_to_string = (byte_array) ->
+	Buffer.from(byte_array).toString('utf8')
+
 # This class represents "USER_NAME_SET" messages; messages sent to the Smart Lock requesting to change a user name
 # Java class "de.eq3.ble.key.android.a.a.al" in original app
 User_Name_Set_Message = message_type
@@ -423,6 +451,9 @@ User_Name_Set_Message = message_type
 			[data.user_id],
 			padded_array(string_to_utf8_byte_array(data.user_name), 20, 0),
 		)
+	properties:
+		user_id: -> @data_bytes[0]
+		user_name: -> utf8_byte_array_to_string(@data_bytes.slice(1, @data_bytes.indexOf(0, 1)))
 
 # An array of all (currently implemented) message types
 message_types = [
@@ -585,9 +616,9 @@ Key_Ble = class extends Event_Emitter
 				, (@status_update_time * 1000)
 
 	on_message_received: (message) ->
+		debug_communication "Received message of type #{message.label}, data bytes <#{byte_array_to_hex_string(message.data_bytes, ' ')}>, data #{JSON.stringify(message.data)}"
 		@emit 'received:message', message
 		@emit "received:message:#{message.label}", message
-		debug_communication "Received message of type #{message.label}, data bytes <#{byte_array_to_hex_string(message.data_bytes, ' ')}>, data #{JSON.stringify(message.data)}"
 		switch message.__type__
 			when Connection_Info_Message
 				@user_id = message.data.user_id
@@ -690,7 +721,8 @@ Key_Ble = class extends Event_Emitter
 			return
 
 	request_status: ->
-		@send_message Status_Request_Message.create()
+		@send_message Status_Request_Message.create
+			date: (new Date())
 		.then =>
 			@await_event 'status_update'
 
