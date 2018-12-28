@@ -185,7 +185,34 @@ Assuming a MQTT broker with IP address 192.168.0.2, sending message "open" to th
 A scenario may be to run keyble on a single board computer (e.g. Raspberry Pi Zero). For this, it is needed to start the above mosquitto -> keyble-sendcommand -> mosquitto chain at boot.
 For this, two files are needed:
 * `/etc/systemd/system/Smartlock.service`  - The systemd service
+```
+[Unit]
+Description=Smartlock
+Require = network-online.target
+After = network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/Smartlock.sh
+Restart=always
+StandardInput=tty
+StandardOutput=tty
+TTYPath=/dev/tty11
+
+[Install]
+WantedBy=multi-user.target
+```
+
 * `/usr/local/bin/Smartlock.sh`  - The script that is run by the service.
+```
+#!/bin/bash
+mqtt_server="192.168.177.3"
+address="00:1a:22:12:12:12"
+key="f98623423423442342342344322"
+user_id="3"
+
+/usr/bin/mosquitto_sub -h $mqtt_server -t "Smartlock/action" | /usr/local/bin/keyble-sendcommand  --address $address --user_id $user_id --user_key $key  | /usr/bin/mosquitto_pub -h $mqtt_server -l -r -t "Smartlock/status"
+```
 
 Both files are available in this github (under ./scripts/). The first file does not need to be edited. In the second file (the script), the mqtt-server ip, the address of the lock, the key and the user_id need to be configured.
 
