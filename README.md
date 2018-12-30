@@ -226,6 +226,11 @@ Both files are available in this github (under ./scripts/). The first file does 
 * Enable it to run at boot:
 `sudo systemctl enable Smartlock`
 
+## Troubleshooting and known issues
+
+### *keyble* cannot work while the smartphone app is running
+
+The smart lock can not handle two or more concurrent Bluetooth connections. So while the smartphone app is connected to the smart lock, *keyble* will not be able to connect to (and control) the smart lock as well. Since the smartphone app automatically connects to the smart lock and stays connected while it is running, *keyble* will not work while the smartphone app is running. So if you witness problems with *keyble* not working properly, please ensure that the smartphone app is closed.
 
 ## API
 
