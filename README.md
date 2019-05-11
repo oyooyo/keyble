@@ -13,6 +13,7 @@ If you intend to use *keyble* to control an eqiva Bluetooth Smart Lock, you migh
 - Only the most basic features are currently implemented:
     - Registering new users
     - Opening / locking / unlocking the smart lock
+    - Toggling between locked and unlocked states
 - The code still needs to be improved, there are a number of bugs etc. and the code is not very elegant yet
 
 ## Requirements
@@ -122,7 +123,7 @@ The above command is the recommended way to register a new user under Linux.
 
 ### keyble-sendcommand
 
-With a valid user ID and user key, as obtained by running the *keyble-registeruser* tool, we can now actually control (=open/lock/unlock) the Smart Lock.
+With a valid user ID and user key, as obtained by running the *keyble-registeruser* tool, we can now actually control (=open/lock/unlock/toggle) the Smart Lock.
 
 This is what the *keyble-sendcommand* tool is for.
 
@@ -130,10 +131,10 @@ This is what the *keyble-sendcommand* tool is for.
                               USER_KEY [--auto_disconnect_time AUTO_DISCONNECT_TIME]
                               [--status_update_time STATUS_UPDATE_TIME]
                               [--timeout TIMEOUT]
-                              [--command {lock,open,unlock,status}]
+                              [--command {lock,open,unlock,toggle,status}]
                           
     
-    Control (lock/unlock/open) an eQ-3 eqiva Bluetooth smart lock.
+    Control (lock/unlock/open/toggle) an eQ-3 eqiva Bluetooth smart lock.
     
     Optional arguments:
       -h, --help            Show this help message and exit.
@@ -158,7 +159,7 @@ This is what the *keyble-sendcommand* tool is for.
                             The timeout time. Commands must finish within this 
                             many seconds, otherwise there is an error. A value of 
                             0 will deactivate timeouts (default: 40)
-      --command {lock,open,unlock,status}, -c {lock,open,unlock,status}
+      --command {lock,open,unlock,toggle,status}, -c {lock,open,unlock,toggle,status}
                             The command to perform. If not provided on the 
                             command line, the command(s) will be read as input 
                             lines from STDIN instead
@@ -173,7 +174,7 @@ Usage example:
 
 #### Piping data into keyble-sendcommand
 
-If the actual command/action ("open"/"lock"/"unlock"/"status") is not passed on the command line via the --command/-c argument, *keyble-sendcommand* will read the command(s) from STDIN instead. This allows piping the output of another program into *keyble-sendcommand*.
+If the actual command/action ("open"/"lock"/"unlock"/"toggle"/"status") is not passed on the command line via the --command/-c argument, *keyble-sendcommand* will read the command(s) from STDIN instead. This allows piping the output of another program into *keyble-sendcommand*.
 
 For example, if you have the *mosquitto-clients* tools installed *(`sudo apt-get install mosquitto-clients`)*, you could easily make your Smart Lock controllable via MQTT by running a command similar to this:
 
@@ -250,7 +251,7 @@ Beware that since *keyble* is still in early alpha state, the API is likely to s
         status_update_time: 600 // Automatically check for status after this many seconds without status updates (0 to disable)
     });
     
-### Lock / Unlock / Open the door lock
+### Lock / Unlock / Open / Toggle the door lock
 
     // Lock the door
     key_ble.lock()
@@ -268,6 +269,12 @@ Beware that since *keyble* is still in early alpha state, the API is likely to s
     key_ble.open()
     .then( () => {
         console.log("Door opened");
+    });
+
+    // Toggle the smart lock between locked and unlocked
+    key_ble.toggle()
+    .then( () => {
+        console.log("Door state changed");
     });
 
 ### Listen for status changes

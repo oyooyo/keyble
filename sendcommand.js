@@ -3,7 +3,7 @@
 'use strict';
 var args, argument_parser, cli, default_auto_disconnect_time, default_status_update_time, default_timeout_time, key_ble, keyble;
 
-// Command line tool for controlling (lock/unlock/open) eQ-3 eqiva Bluetooth smart locks
+// Command line tool for controlling (lock/unlock/open/toggle) eQ-3 eqiva Bluetooth smart locks
 
 // Import/Require the local "cli" module that provides some useful functions for CLI scripts
 cli = require('./cli');
@@ -27,7 +27,7 @@ default_timeout_time = 45.0;
 if (require.main === module) {
   // Parse the command line arguments
   argument_parser = new cli.ArgumentParser({
-    description: 'Control (lock/unlock/open) an eQ-3 eqiva Bluetooth smart lock.'
+    description: 'Control (lock/unlock/open/toggle) an eQ-3 eqiva Bluetooth smart lock.'
   });
   argument_parser.addArgument(['--address', '-a'], {
     required: true,
@@ -60,7 +60,7 @@ if (require.main === module) {
     help: `The timeout time. Commands must finish within this many seconds, otherwise there is an error. A value of 0 will deactivate timeouts (default: ${default_timeout_time})`
   });
   argument_parser.addArgument(['--command', '-c'], {
-    choices: ['lock', 'open', 'unlock', 'status'],
+    choices: ['lock', 'open', 'unlock', 'status', 'toggle'],
     required: false,
     type: 'string',
     help: 'The command to perform. If not provided on the command line, the command(s) will be read as input lines from STDIN instead'
@@ -87,10 +87,14 @@ if (require.main === module) {
           return key_ble.open();
         case 'status':
           return key_ble.request_status();
+        case 'toggle':
+          return key_ble.request_status().then(() => {
+            return key_ble.toggle();
+          });
         default:
           return Promise.reject(`Unknown command "${command}"`);
       }
-    })()), args.timeout * 1000).catch(function(error) {
+    }).call(this)), args.timeout * 1000).catch(function(error) {
       return console.error(`Error: ${error}`);
     });
   }).then(function() {

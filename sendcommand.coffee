@@ -2,7 +2,7 @@
 
 'use strict'`
 
-# Command line tool for controlling (lock/unlock/open) eQ-3 eqiva Bluetooth smart locks
+# Command line tool for controlling (lock/unlock/open/toggle) eQ-3 eqiva Bluetooth smart locks
 
 # Import/Require the local "cli" module that provides some useful functions for CLI scripts
 cli = require('./cli')
@@ -26,7 +26,7 @@ default_timeout_time = 45.0
 if (require.main is module)
 	# Parse the command line arguments
 	argument_parser = new cli.ArgumentParser
-		description: 'Control (lock/unlock/open) an eQ-3 eqiva Bluetooth smart lock.'
+		description: 'Control (lock/unlock/open/toggle) an eQ-3 eqiva Bluetooth smart lock.'
 	argument_parser.addArgument ['--address', '-a'],
 		required: true
 		type: 'string'
@@ -52,7 +52,7 @@ if (require.main is module)
 		defaultValue: default_timeout_time
 		help: "The timeout time. Commands must finish within this many seconds, otherwise there is an error. A value of 0 will deactivate timeouts (default: #{default_timeout_time})"
 	argument_parser.addArgument ['--command', '-c'],
-		choices: ['lock', 'open', 'unlock', 'status']
+		choices: ['lock', 'open', 'unlock', 'status', 'toggle']
 		required: false
 		type: 'string'
 		help: 'The command to perform. If not provided on the command line, the command(s) will be read as input lines from STDIN instead'
@@ -72,6 +72,8 @@ if (require.main is module)
 			when 'unlock' then key_ble.unlock()
 			when 'open' then key_ble.open()
 			when 'status' then key_ble.request_status()
+			when 'toggle' then key_ble.request_status().then =>
+				key_ble.toggle()
 			else Promise.reject("Unknown command \"#{command}\"")
 		), (args.timeout * 1000)).catch (error) ->
 			console.error "Error: #{error}"

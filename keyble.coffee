@@ -572,6 +572,19 @@ Key_Ble = class extends Event_Emitter
 		.then =>
 			@await_event 'status:UNLOCKED'
 
+	# Toggle the smart lock between locked and unlocked
+	toggle: ->
+		#console.log @lock_status_id
+		if @lock_status_id is 3 or @lock_status_id is 0 # locked
+			return @send_command(1) # unlock
+			.then =>
+				@await_event 'status:UNLOCKED'
+		if @lock_status_id is 2 # unlocked
+			return @send_command(0) # lock
+			.then =>
+				@await_event 'status:LOCKED'
+		return Promise.resolve()
+
 	# Open the smart lock
 	open: ->
 		if (@lock_status_id is 4) then return Promise.resolve()

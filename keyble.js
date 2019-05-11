@@ -721,6 +721,22 @@ Key_Ble = class extends Event_Emitter {
     });
   }
 
+  // Toggle the smart lock between locked and unlocked
+  toggle() {
+    //console.log @lock_status_id
+    if (this.lock_status_id === 3 || this.lock_status_id === 0) { // locked
+      return this.send_command(1).then(() => { // unlock
+        return this.await_event('status:UNLOCKED');
+      });
+    }
+    if (this.lock_status_id === 2) { // unlocked
+      return this.send_command(0).then(() => { // lock
+        return this.await_event('status:LOCKED');
+      });
+    }
+    return Promise.resolve();
+  }
+
   // Open the smart lock
   open() {
     if (this.lock_status_id === 4) {
