@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0 *(2020/10/08)*
+
+- Rewrote source code in ECMAscript/JavaScript
+- Shortened file keyble.js by moving all message types to message_types.js and all utility functions to utils.js
+- Using async functions instead of Promises where possible
+- Making use of new ECMAscript features like async generators
+
 ## v0.1.14 *(2018/12/25)*
 
 - Added a little more debug output
