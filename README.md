@@ -232,6 +232,19 @@ Both files are available in this github (under ./scripts/). The first file does 
 
 The smart lock can not handle two or more concurrent Bluetooth connections. So while the smartphone app is connected to the smart lock, *keyble* will not be able to connect to (and control) the smart lock as well. Since the smartphone app automatically connects to the smart lock and stays connected while it is running, *keyble* will not work while the smartphone app is running. So if you witness problems with *keyble* not working properly, please ensure that the smartphone app is closed.
 
+### When sending a command to the smart lock via `keyble-sendcommand --command open`, it takes some 5-10 seconds until the smartlock actually executes the command. When I click the "open" button in the Smartphone app, it happens instantly
+
+There are two main causes of this delay:
+
+1. When running `keyble-sendcommand`, it takes some time before the program code will actually start executing. That's because the program code will first be JIT-compiled, required Node.js modules will first be loaded etc. How long this takes depends heavily on the hardware that keyble-sendcommand is running on; on my desktop PC, this takes around 1 second or so, on my Raspberry Pi, it takes some 4 to 5 seconds I'd guess.
+The only solution to avoid this delay is to run keyble-sendcommand in continuous mode mode, without the "--command" option, as described in the "Piping data into keyble-sendcommand"-section. That way, keyble-sendcommand does not need to be initialized every time a command is being sent.
+
+2. keyble-sendcommand needs to connect to the smart lock via Bluetooth LE and discover it's Bluetooth services and characteristics before it can actually send commands. That process takes some 1-1.5 seconds. This delay can be avoided by running `keyble-sendcommand` with the `-adt 0` command line option, which causes keyble-sendcommand to keep connected to the smartlock.
+Be aware that `-adt 0` command line option only works in continuous mode, not when when sending a single command by executing `keyble-sendcommand --command ...`.
+
+Disabling auto-disconnect by specifying `-adt 0` comes with 1-2 disadvantages though:
+Since the PC running keyble-sendcommand will stay connected to the smart lock, no one else can connect to the smart lock anymore. So you could no longer control the smart lock via the Smartphone app as well for example. Furthermore, staying connected to the smart lock might drain the smart lock's batteries faster (but not necessarily - it might even be just the other way around, I've never really tried).
+
 ## API
 
 Beware that since *keyble* is still in early alpha state, the API is likely to still change a lot, probably with backwards-incompatible changes. Only a subset of the functionality has been documented yet, and only a few usage examples are provided.
@@ -304,7 +317,7 @@ to time-limit the open() action to 15000 milliseconds = 15 seconds.
 
 ## Beware of firmware updates
 
-Be aware that the vendor might *(at least temporarily)* render this software useless with a future firmware update.
+Be aware that the vendor might theoretically render this software useless with a future firmware update.
 
 This software was developed against firmware version 1.7, which is the latest firmware version as of now *(2018/09/05)*.
 
