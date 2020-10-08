@@ -1,45 +1,42 @@
 {
-  "name": "keyble",
-  "version": "0.1.14",
-  "description": "Command line tools and library for controlling eQ-3 eqiva Bluetooth smart locks",
-  "main": "keyble.js",
-  "bin": {
-    "keyble-sendcommand": "./sendcommand.js",
-    "keyble-registeruser": "./registeruser.js"
-  },
-  "scripts": {
-    "compile": "coffee --bare --no-header --map --compile *.coffee",
-    "prepublishOnly": "npm run compile",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/oyooyo/keyble.git"
-  },
-  "keywords": [
-    "eqiva",
-    "eQ-3",
-    "Bluetooth",
-    "Smart Lock"
-  ],
-  "author": {
-    "name": "oyooyo"
-  },
-  "license": "ISC",
-  "devDependencies": {
-    "coffeescript": "^2.3.2"
-  },
-  "dependencies": {
-    "aes-js": "^3.1.2",
-    "argparse": "^1.0.10",
-    "debug": "^4.1.1",
-    "simble": "^0.2.3"
-  },
-  "files": [
-    "CHANGELOG.md",
-    "*.js",
-    "package.json",
-    "package-lock.json",
-    "README.md"
-  ]
+	"name": "keyble",
+	"version": "0.2.0",
+	"description": "Command line tools and library for controlling eQ-3 eqiva Bluetooth smart locks",
+	"main": "keyble.js",
+	"bin": {
+		"keyble-sendcommand": "./send_command.js",
+		"keyble-registeruser": "./register_user.js"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/oyooyo/keyble.git"
+	},
+	"keywords": [
+		"eqiva",
+		"eQ-3",
+		"key-ble",
+		"Smart Lock"
+	],
+	"author": {
+		"name": "oyooyo"
+	},
+	"license": "ISC",
+	"dependencies": {
+		"aes-js": "^3.1.2",
+		"argparse": "^2.0.1",
+		"debug": "^4.2.0",
+		"simble": "^0.2.6"
+	},
+	"files": [
+		"*.js",
+		"*.md",
+		"package.json",
+		"package-lock.json"
+	],
+	"devDependencies": {
+		"jsdoc": "^3.6.6"
+	}
 }
