@@ -58,7 +58,7 @@ const register_users_then_exit = async (qr_code_data, user_name) => {
 		await wait_milliseconds(10000);
 	}
 	try {
-		for await (let key_card_data_string of generate_input_strings(qr_code_data, process.stdin)) {
+		for await (let key_card_data_string of generate_input_strings([qr_code_data], process.stdin)) {
 			await register_user(key_card_data_string, user_name);
 		}
 		// "noble", the Bluetooth library being used, does not properly shut down. An explicit process.exit() is required when finished.
@@ -78,17 +78,17 @@ if (require.main === module) {
 	const argument_parser = new ArgumentParser({
 		description: "Register users on eQ-3 eqiva Bluetooth smart locks.",
 	});
-	argument_parser.addArgument(['--user_name', '-n'], {
-		defaultValue: DEFAULT_USER_NAME,
-		type: 'string',
+	argument_parser.add_argument('--user_name', '-n', {
+		default: DEFAULT_USER_NAME,
+		type: String,
 		help: `The name of the user to register (default: "${DEFAULT_USER_NAME}")`,
 	});
-	argument_parser.addArgument(['--qr_code_data', '-q'], {
+	argument_parser.add_argument('--qr_code_data', '-q', {
 		required: false,
-		type: 'string',
+		type: String,
 		help: 'The information encoded in the QR-Code of the key card. If not provided on the command line, the data will be read as input lines from STDIN instead',
 	});
-	const {qr_code_data, user_name} = argument_parser.parseArgs();
+	const {qr_code_data, user_name} = argument_parser.parse_args();
 	// Register users, then exit
 	register_users_then_exit(qr_code_data, user_name);
 }
