@@ -308,10 +308,9 @@ const Key_Ble = class extends Event_Emitter {
 		this.received_message_fragments.push(message_fragment);
 		this.emit('received:fragment', message_fragment);
 		if (message_fragment.is_last()) {
-			const message_data_bytes = this.received_message_fragments.reduce((byte_array, message_fragment) =>
+			let message_data_bytes = this.received_message_fragments.reduce((byte_array, message_fragment) =>
 					[...byte_array, ...message_fragment.get_data_byte_array()]
 				, []);
-			let plain_message_data_bytes;
 			const Message_Type = MESSAGE_TYPES_BY_ID[this.received_message_fragments[0].get_message_type_id()];
 			if (Message_Type.is_secure()) {
 				const message_security_counter = convert_byte_array_to_integer(message_data_bytes, -6, -4);
@@ -320,16 +319,16 @@ const Key_Ble = class extends Event_Emitter {
 				}
 				const message_authentication_value = message_data_bytes.slice(-4);
 				this.remote_security_counter = message_security_counter;
-				plain_message_data_bytes = crypt_data(message_data_bytes.slice(0, -6), Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
-				const computed_authentication_value = compute_authentication_value(plain_message_data_bytes, Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
+				message_data_bytes = crypt_data(message_data_bytes.slice(0, -6), Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
+				const computed_authentication_value = compute_authentication_value(message_data_bytes, Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
 				if (! are_byte_arrays_equal(message_authentication_value, computed_authentication_value)) {
 					throw (new Error('Received message contains invalid authentication value'));
 				}
 			} else {
-				plain_message_data_bytes = message_data_bytes;
+				message_data_bytes = message_data_bytes;
 			}
 			this.received_message_fragments = [];
-			this.on_message_received(Message_Type.create(plain_message_data_bytes));
+			this.on_message_received(Message_Type.create(message_data_bytes));
 		} else {
 			this.send_message(Fragment_Ack_Message.create({
 				fragment_id: message_fragment.get_status_byte(),
@@ -430,6 +429,7 @@ const Key_Ble = class extends Event_Emitter {
 		});
 		peripheral.on('disconnected', () => {
 			this.state = CONNECTION_STATE.DISCONNECTED;
+			this.peripheral = null;
 			this.emit('disconnected');
 		});
 		const communication_service = this.peripheral.get_discovered_service('58e06900-15d8-11e6-b737-0002a5d5c51b');
