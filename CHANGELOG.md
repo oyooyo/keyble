@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.1 *(2020/10/10)*
+
+- Fix bug that reconnecting doesn't work
+
 ## v0.2.0 *(2020/10/08)*
 
 - Rewrote source code in ECMAscript/JavaScript
