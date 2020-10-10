@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.2 *(2020/10/10)*
+
+- Hopefully fixed bug in register_user.js
+- Renamed deprecated ArgumentParser functions/parameter names in register_user.js
+
 ## v0.2.1 *(2020/10/10)*
 
 - Fix bug that reconnecting doesn't work
