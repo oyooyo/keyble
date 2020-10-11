@@ -393,22 +393,18 @@ const Key_Ble = class extends Event_Emitter {
 
 	async send_message_fragment(message_fragment) {
 		await this.ensure_connected();
-		await this.send_characteristic.write(message_fragment.byte_array);
+		// Somehow, waiting for the Promise to fulfill doesn't work. The FRAGMENT_ACK message is received before the send_characteristic.write() Promise fulfills.
+		//await this.send_characteristic.write(message_fragment.byte_array);
+		this.send_characteristic.write(message_fragment.byte_array);
 		if (! message_fragment.is_last()) {
 			await this.await_message('FRAGMENT_ACK');
 		}
 	}
 
 	async send_message_fragments(message_fragments) {
-		const send_message_fragment_with_index = async (message_fragment_index) => {
-			if (message_fragment_index < message_fragments.length) {
-				await this.send_message_fragment(message_fragments[message_fragment_index]);
-				await send_message_fragment_with_index(message_fragment_index + 1);
-			} else {
-				return;
-			}
+		for (let message_fragment of message_fragments) {
+			await this.send_message_fragment(message_fragment);
 		}
-		await send_message_fragment_with_index(0);
 	}
 
 	async send_message(message) {

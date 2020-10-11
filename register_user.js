@@ -35,12 +35,12 @@ const DEFAULT_USER_NAME = 'keyble';
 
 const register_user = async (key_card_data_string, user_name) => {
 	// Parse/Decode the information encoded in the QR-Codes on the "Key Card"s
-	const {address, register_key, serial} = keyble.key_card.parse(key_card_data_string);
-	console.log(`Registering user on Smart Lock with address "${ansi_colorize(address)}", card key "${ansi_colorize(register_key)}" and serial "${ansi_colorize(serial)}"...`);
+	const {address, key, serial} = keyble.key_card.parse(key_card_data_string);
+	console.log(`Registering user on Smart Lock with address "${ansi_colorize(address)}", card key "${ansi_colorize(key)}" and serial "${ansi_colorize(serial)}"...`);
 	const key_ble = new keyble.Key_Ble({
 		address: address,
 	});
-	const user_data = await key_ble.pairing_request(register_key);
+	const {user_id, user_key} = await key_ble.pairing_request(key);
 	console.log(`User registered!`);
 	console.log(`Use arguments: "${ansi_colorize(`--address ${address} --user_id ${user_id} --user_key ${user_key}`)}"`);
 	console.log(`Setting user name to "${user_name}"...`);

@@ -300,7 +300,7 @@ const User_Name_Set_Message = create_message_type(/** @lends User_Name_Set_Messa
 	),
 	properties: {
 		user_id: ((data_bytes) => data_bytes[0]),
-		user_name: ((data_bytes) => utf8_byte_array_to_string(data_bytes.slice(1, data_bytes.indexOf(0, 1)))),
+		user_name: ((data_bytes) => convert_utf8_encoded_byte_array_to_string(data_bytes.slice(1, data_bytes.indexOf(0, 1)))),
 	},
 });
 
