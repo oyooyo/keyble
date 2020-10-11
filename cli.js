@@ -22,6 +22,7 @@ const readline = require('readline');
 
 /**
  * Async generator function that yields input strings from the the first valid "input source".
+ * @private
  * @async
  * @generator
  * @param {string[]|ReadableStream} - One or more "input sources". Each input source can either be an array of strings or a readable stream.

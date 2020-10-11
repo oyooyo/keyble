@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.3 *(2020/10/11)*
+
+- Changed status output to print JSON objects
+- Add Mount_Options_Set_Message message type
+- Hopefully fixed another bug in register_user.js
+- Added "--output_status_updates" command line flag to keyble-sendcommand
+
 ## v0.2.2 *(2020/10/10)*
 
 - Hopefully fixed bug in register_user.js

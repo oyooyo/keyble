@@ -3,6 +3,7 @@
 /**
  * The "message_types" submodule.
  * Contains the available message types etc.
+ * @private
  * @module message_types
  */
 
@@ -18,6 +19,7 @@ const {
 	create_lookup_table_by_object_property_value,
 	is_bit_set,
 	pad_array_end,
+	bit_mask_for_value,
 } = require('./utils.js');
 
 /**
@@ -147,12 +149,41 @@ const Connection_Info_Message = create_message_type(/** @lends Connection_Info_M
 const Connection_Request_Message = create_message_type(/** @lends Connection_Request_Message */ {
 	id: 0x02,
 	label: 'CONNECTION_REQUEST',
-	encode: ((data) =>
-		[data.user_id, ...data.local_session_nonce]
+	encode: (({user_id, local_session_nonce}) =>
+		[user_id, ...local_session_nonce]
 	),
 	properties: {
 		user_id: ((data_bytes) => data_bytes[0]),
 		local_session_nonce: ((data_bytes) => data_bytes.slice(1, 9)),
+	},
+});
+
+//- _REQUIRE_ES_ '../library/is_bit_set.js'
+/**
+ * This class represents the message type "MOUNT_OPTIONS_SET".
+ * Sent to the Smart Lock in order to set up the parameters of the lock (left/right side, horizontal/vertical, number of lock turns).
+ * (Java class "de.eq3.ble.key.android.a.a.ab" in original app)
+ * @class
+ */
+const Mount_Options_Set_Message = create_message_type(/** @lends Mount_Options_Set_Message */ {
+	id: 0x86,
+	label: 'MOUNT_OPTIONS_SET',
+	encode: (({turn_direction_is_left, neutral_position_is_horizontal, lock_turns}) =>
+		[
+			(bit_mask_for_value(turn_direction_is_left, 0) | bit_mask_for_value(neutral_position_is_horizontal, 1)),
+			lock_turns,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+		]
+	),
+	properties: {
+		turn_direction_is_left: ((data_bytes) => is_bit_set(data_bytes[0], 0)),
+		neutral_position_is_horizontal: ((data_bytes) => is_bit_set(data_bytes[0], 1)),
+		lock_turns: ((data_bytes) => (data_bytes[1] & 7)),
 	},
 });
 
@@ -205,9 +236,9 @@ const Status_Info_Message = create_message_type(/** @lends Status_Info_Message *
 	properties: {
 		a: ((data_bytes) => is_bit_set(data_bytes[0], 6)),
 		user_right_type: ((data_bytes) => ((data_bytes[0] & 0x30) >> 4)),
-		e: ((data_bytes) => is_bit_set(data_bytes[1], 7)),
+		battery_low: ((data_bytes) => is_bit_set(data_bytes[1], 7)),
 		f: ((data_bytes) => is_bit_set(data_bytes[1], 4)),
-		g: ((data_bytes) => is_bit_set(data_bytes[1], 0)),
+		pairing_allowed: ((data_bytes) => is_bit_set(data_bytes[1], 0)),
 		h: ((data_bytes) => is_bit_set(data_bytes[2], 5)),
 		i: ((data_bytes) => is_bit_set(data_bytes[2], 4)),
 		j: ((data_bytes) => is_bit_set(data_bytes[2], 3)),
@@ -326,6 +357,7 @@ const MESSAGE_TYPES = [
 	Command_Message,
 	Connection_Info_Message,
 	Connection_Request_Message,
+	Mount_Options_Set_Message,
 	Pairing_Request_Message,
 	Status_Changed_Notification_Message,
 	Status_Info_Message,
@@ -350,6 +382,7 @@ module.exports = {
 	Command_Message: Command_Message,
 	Connection_Info_Message: Connection_Info_Message,
 	Connection_Request_Message: Connection_Request_Message,
+	Mount_Options_Set_Message: Mount_Options_Set_Message,
 	Pairing_Request_Message: Pairing_Request_Message,
 	Status_Changed_Notification_Message: Status_Changed_Notification_Message,
 	Status_Info_Message: Status_Info_Message,

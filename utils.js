@@ -313,6 +313,15 @@ const create_lookup_table_by_object_property_value = (objects_array, property_na
 }
 
 /**
+ * Converts a boolean or unsigned integer value to a bitmask.
+ * @param {number|boolean} value - The value to get the bitmask for.
+ * @param {number} bit_index - The index of the lowest bit.
+ * @returns {number} The bitmask for the value.
+ */
+const bit_mask_for_value = (value, bit_index) =>
+	((+value) << bit_index)
+
+/**
  * What this module exports.
  */
 module.exports = {
@@ -337,5 +346,6 @@ module.exports = {
 	convert_string_to_utf8_encoded_byte_array: convert_string_to_utf8_encoded_byte_array,
 	convert_utf8_encoded_byte_array_to_string: convert_utf8_encoded_byte_array_to_string,
 	create_lookup_table_by_object_property_value: create_lookup_table_by_object_property_value,
+	bit_mask_for_value: bit_mask_for_value,
 };
 

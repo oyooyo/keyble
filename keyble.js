@@ -3,6 +3,7 @@
 /**
  * The "keyble" submodule.
  * For controlling the "key-ble" Bluetooth Low Energy Smart Door Locks from eqiva.
+ * @public
  * @module keyble
  */
 
@@ -26,6 +27,7 @@ const {are_byte_arrays_equal, convert_byte_array_to_hex_string, convert_byte_arr
 
 /**
  * Import/require the "simble" module that is being used for Bluetooth communication as "simble".
+ * @private
  * @requires simble
  * @see {@link https://github.com/oyooyo/simble#readme}
  */
@@ -33,6 +35,7 @@ const simble = require('simble');
 
 /**
  * Import/Require the "debug" module as "create_log_debug_message_function".
+ * @private
  * @function
  * @param {string} namespace - The namespace that the "log debug message" function shall use.
  * @returns {function} A "log debug message" function that logs debug messages in the specified namespace.
@@ -43,6 +46,7 @@ const create_log_debug_message_function = require('debug');
 
 /**
  * Logs a debug message in the "keyble:communication" namespace.
+ * @private
  * @function
  * @param {string} message - The debug message to output.
  */
@@ -50,6 +54,7 @@ const log_communication_debug_message = create_log_debug_message_function('keybl
 
 /**
  * Logs a debug message in the "keyble:event" namespace.
+ * @private
  * @function
  * @param {string} message - The debug message to output.
  */
@@ -58,6 +63,7 @@ const log_event_debug_message = create_log_debug_message_function('keyble:event'
 //- _REQUIRE_ES_ 'library/convert_to_byte_array.js'
 /**
  * Import/require the "aes-js" module that is being used for AES encryption as "aesjs".
+ * @private
  * @requires aes-js
  * @see {@link https://github.com/ricmoo/aes-js#readme}
  */
@@ -65,6 +71,7 @@ const aesjs = require('aes-js');
 
 /**
  * AES-128-encrypt a byte array in ECB mode.
+ * @private
  * @param {number[]} data - The data to encrypt.
  * @param {number[]} key - The AES-128 key to encrypt the data with.
  * @returns {number[]} The encrypted data.
@@ -75,6 +82,7 @@ const encrypt_aes_ecb = (data, key) =>
 //- _REQUIRE_ES_ 'library/convert_integer_to_byte_array.js'
 /**
  * Compute a nonce.
+ * @private
  * @param {number} message_type_id - The ID of the message type.
  * @param {number[]} session_open_nonce - The session open nonce.
  * @param {number} security_counter - The security counter.
@@ -90,6 +98,7 @@ const compute_nonce = (message_type_id, session_open_nonce, security_counter) =>
 //- _REQUIRE_ES_ 'library/xor_arrays.js'
 /**
  * Compute an "authentication value".
+ * @private
  * @param {number[]} data - The data to compute the authentication value for.
  * @param {number} message_type_id - The message type ID.
  * @param {number[]} session_open_nonce - The session open nonce.
@@ -116,6 +125,7 @@ const compute_authentication_value = (data, message_type_id, session_open_nonce,
 //- _REQUIRE_ES_ 'library/xor_arrays.js'
 /**
  * Encrypt or Decrypt a byte array that is part of a Message.
+ * @private
  * @param {number[]} byte_array - The byte array to encrypt or decrypt. If byte_array is already encrypted it will be decrypted and vice versa.
  * @param {number} message_type_id - The ID of the message type.
  * @param {number[]} session_open_nonce - The session open nonce.
@@ -137,6 +147,7 @@ const crypt_data = (byte_array, message_type_id, session_open_nonce, security_co
 /**
  * This class represents a message fragment.
  * Bluetooth characteristics can only transfer a very limited number of bytes at once, so larger messages need to be split into several fragments/parts.
+ * @private
  */
 const Message_Fragment = class {
 	constructor(byte_array) {
@@ -182,6 +193,7 @@ const CONNECTION_STATE = {
 
 /**
  * A class that represents a eQ-3 eqiva Bluetooth smart lock.
+ * @public
  */
 const Key_Ble = class extends Event_Emitter {
 
@@ -348,7 +360,7 @@ const Key_Ble = class extends Event_Emitter {
 				this.remote_security_counter = 0;
 				break;
 			case Status_Info_Message:
-				const lock_status_id = message.data.lock_status;
+				const {lock_status:lock_status_id, battery_low, pairing_allowed} = message.data;
 				const lock_status_string = {
 					0:'UNKNOWN',
 					1:'MOVING',
@@ -356,11 +368,18 @@ const Key_Ble = class extends Event_Emitter {
 					3:'LOCKED',
 					4:'OPENED',
 				}[lock_status_id];
-				this.emit('status_update', lock_status_id, lock_status_string);
+				const lock_state = {
+					battery_low: battery_low,
+					lock_status: lock_status_string,
+					lock_status_id: lock_status_id,
+					battery_low: battery_low,
+					pairing_allowed: pairing_allowed,
+				};
+				this.emit('status_update', lock_state);
+				this.emit(`status:${lock_status_string}`, lock_state);
 				if (this.lock_status_id !== lock_status_id) {
 					this.lock_status_id = lock_status_id;
-					this.emit(`status:${lock_status_string}`, lock_status_id, lock_status_string);
-					this.emit('status_change', lock_status_id, lock_status_string);
+					this.emit('status_change', lock_state);
 				}
 				this.set_status_update_timer();
 				break;
@@ -485,6 +504,7 @@ const Key_Ble = class extends Event_Emitter {
 
 /**
  * The regular expression pattern of the data encoded in the QR-Code on the "Key Card"s of the eQ-3 eqiva Bluetooth smart locks.
+ * @public
  * @constant
  * @type {string}
  */
@@ -492,6 +512,7 @@ const KEY_CARD_DATA_PATTERN = '^M(?<address>[0-9A-F]{12})K(?<key>[0-9A-F]{32})(?
 
 /**
  * The regular expression of the data encoded in the QR-Code on the "Key Card"s of the eQ-3 eqiva Bluetooth smart locks.
+ * @public
  * @constant
  * @type {RegExp}
  */
@@ -501,6 +522,7 @@ const KEY_CARD_DATA_REGEXP = (new RegExp(KEY_CARD_DATA_PATTERN));
 //- _REQUIRE_ES_ 'library/convert_hex_string_to_byte_array.js'
 /**
  * Parse the data of a "Key Card".
+ * @public
  * @param {string} key_card_data_string - The data string encoded in the QR-Code on the Key Card.
  * @returns {object} The information encoded on the Key Card, as an object with "address", "key" and "serial" properties.
  * @throws {Error} If the specified key card data string is invalid.
@@ -511,13 +533,13 @@ const parse_key_card_data = (key_card_data_string) => {
 		throw (new Error(`"${key_card_data_string}" is not a valid Key Card data string`));
 	}
 	return {
-		address: create_byte_array_formats(hex_string_to_byte_array(match.groups.address), ':').long,
-		key: create_byte_array_formats(hex_string_to_byte_array(match.groups.key), ' ').short,
+		address: create_byte_array_formats(convert_hex_string_to_byte_array(match.groups.address), ':').long,
+		key: create_byte_array_formats(convert_hex_string_to_byte_array(match.groups.key), ' ').short,
 		serial: match.groups.serial,
 	}
 }
 
-/**
+/*
  * What this module exports.
  */
 module.exports = {

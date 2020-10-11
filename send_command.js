@@ -36,7 +36,7 @@ const DEFAULT_STATUS_UPDATE_TIME = 900.0;
  */
 const DEFAULT_TIMEOUT_TIME = 30.0;
 
-const send_commands_then_exit = async ({address, user_id, user_key, auto_disconnect_time, status_update_time, command, timeout}) => {
+const send_commands_then_exit = async ({address, user_id, user_key, auto_disconnect_time, status_update_time, command, timeout, output_status_updates=true}) => {
 	try {
 		const key_ble = new keyble.Key_Ble({
 			address: address,
@@ -45,8 +45,8 @@ const send_commands_then_exit = async ({address, user_id, user_key, auto_disconn
 			auto_disconnect_time: auto_disconnect_time,
 			status_update_time: status_update_time,
 		});
-		key_ble.on('status_change', (status_id, status_string) => {
-			console.log(status_string);
+		key_ble.on((output_status_updates ? 'status_update' : 'status_change'), (lock_state) => {
+			console.log(JSON.stringify(lock_state));
 		});
 		for await (let input_command of generate_input_strings([command], process.stdin)) {
 			const action = {
@@ -54,7 +54,7 @@ const send_commands_then_exit = async ({address, user_id, user_key, auto_disconn
 				unlock: key_ble.unlock,
 				open: key_ble.open,
 				status: key_ble.request_status,
-			}[input_command];
+			}[input_command.toLowerCase()];
 			if (! action) {
 				throw new Error(`Unknown command "${command}"`);
 			}
@@ -112,6 +112,12 @@ if (require.main == module) {
 		required: false,
 		type: String,
 		help: 'The command to perform. If not provided on the command line, the command(s) will be read as input lines from STDIN instead',
+	});
+	argument_parser.add_argument('--output_status_updates', '-osu', {
+		required: false,
+		default: true,
+		type: Boolean,
+		help: 'Output status updates as well, not just status changes',
 	});
 	// Parse the command line arguments and pass them to the send_commands_then_exit function.
 	send_commands_then_exit(argument_parser.parse_args());
