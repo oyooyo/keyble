@@ -1,27 +1,28 @@
 # keyble
 
-*keyble* is a set of command line tools for controlling/interfacing with [eQ-3 eqiva Bluetooth Smart Lock](https://www.eq-3.com/products/eqiva/bluetooth-smart-lock.html)s.
+*keyble* provides an API and a set of command line tools for controlling/interfacing with [eQ-3 eqiva Bluetooth Smart Lock](https://www.eq-3.com/products/homematic/detail/bluetooth-smart-lock.html)s.
 
-At a price of just about 60€, these Smart Locks offer an excellent price/performance ratio. But until now, these smart locks could only be controlled using the vendor's official Smartphone app, and could not be integrated into existing smart home systems.
+Available at prices as low as 60€, these Smart Locks are considerably cheaper than comparable smart locks. That doesn't mean they're lower quality or not as secure though - in fact, the eqiva Bluetooth Smart Lock came out first in a [comparative test by the highly-respected german "*Stiftung Warentest*" magazine](https://www.test.de/Smarte-Tuerschloesser-im-Test-Nicht-alle-sind-sicher-5655666-0/).
 
-If you intend to use *keyble* to control an eqiva Bluetooth Smart Lock, you might also be interested in the cheap [eQ-3 eqiva Bluetooth Smart Radiator Thermostat](https://www.eq-3.com/products/eqiva/bluetooth-smart-radiator-thermostat.html)s from the same vendor. I wrote [a similar tool for controlling eQ-3 eqiva Bluetooth radiator thermostats](https://github.com/oyooyo/nixfilter-rtble) that works almost identical to *keyble*.
+The device has one major downside though: The only intended way to control the smart lock is via the vendor's official Android and iOS smartphone app, making it an isolated application.
+This is where *keyble* steps in. *keyble* allows controlling the smart lock from any computer that meets [the requirements](#requirements), making it possible to integrate the smart lock into existing smart home systems (based for example on [Node-RED](https://nodered.org/), [ioBroker](https://www.iobroker.net/), [Home Assistant](https://www.home-assistant.io/), [openHAB](https://www.openhab.org/), [FHEM](https://fhem.de/) etc.).
+
+If you intend to use *keyble* to control an eqiva Bluetooth Smart Lock, you might also be interested in the cheap [eQ-3 eqiva Bluetooth Smart Radiator Thermostat](https://www.eq-3.com/products/homematic/detail/bluetooth-smart-radiator-thermostat.html)s from the same vendor. I wrote [a similar tool for controlling eQ-3 eqiva Bluetooth radiator thermostats](https://github.com/oyooyo/nixfilter-rtble) that works almost identical to *keyble*.
 
 ## Current status
 
-*keyble* is still in an early state:
+*keyble* currently only provides a few basic features:
 
-- Only the most basic features are currently implemented:
-    - Registering new users
     - Opening / locking / unlocking the smart lock
-- The code still needs to be improved, there are a number of bugs etc. and the code is not very elegant yet
+    - Registering new users
 
 ## Requirements
 
-*keyble* requires the following hard- and software
+*keyble* requires the following hard- and software:
 
 - Bluetooth 4.0 compatible hardware
-- [Node.js](https://nodejs.org/) *(only tested with Node.js 8.x so far - Node.js 10.x does not seem to work yet, due to a problem with Node 10.x in one of the dependencies)*
-- Linux, OSX or Windows operating system *(only really tested on Linux so far)*
+- [Node.js](https://nodejs.org/) *(version 10 or greater)*
+- Linux, OSX or Windows operating system
 
 ## Installation
 
@@ -54,9 +55,9 @@ These instructions should, however, work on all other Debian-based Linuxes (like
     # (Optional, but recommended) Fully update/upgrade system
     sudo apt-get -y update && sudo apt-get -y dist-upgrade
     
-    # Install Node.js v8
-    wget -qO- https://deb.nodesource.com/setup_8.x | sudo -E bash -
-    sudo apt-get install -y build-essential nodejs
+    # Install Node.js LTS
+    curl -sL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+    sudo apt-get install --upgrade -y build-essential nodejs
     
     # Make sure required libraries for Bluetooth are installed
     sudo apt-get -y install bluetooth bluez libbluetooth-dev libudev-dev

@@ -10,6 +10,9 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
+	"engines": {
+		"node": ">=0.10"
+	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/oyooyo/keyble.git"
@@ -20,10 +23,14 @@
 		"key-ble",
 		"Smart Lock"
 	],
+	"homepage": "https://oyooyo.github.io/keyble/",
 	"author": {
 		"name": "oyooyo"
 	},
 	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/oyooyo/keyble/issues"
+	},
 	"dependencies": {
 		"aes-js": "^3.1.2",
 		"argparse": "^2.0.1",
