@@ -26,8 +26,8 @@ const ansi_colorize = (string, code=31) =>
 
 /**
  * Checks if two byte arrays are equal.
- * @param {number[]} array_1 - The first byte array.
- * @param {number[]} array_2 - The second byte array.
+ * @param {Uint8Array} array_1 - The first byte array.
+ * @param {Uint8Array} array_2 - The second byte array.
  * @returns {boolean} True if both byte arrays are equal.
  */
 const are_byte_arrays_equal = (byte_array_1, byte_array_2) =>
@@ -35,7 +35,7 @@ const are_byte_arrays_equal = (byte_array_1, byte_array_2) =>
 
 /**
  * Convert a byte array to a hexadecimal string.
- * @param {number[]} byte_array - The byte array to convert, an Array of integers in range 0..255.
+ * @param {Uint8Array} byte_array - The byte array to convert, an Array of integers in range 0..255.
  * @param {string} [separator=" "] - The string that will separate the individual bytes.
  * @param {string} [prefix=""] - If specified, the hexadecimal representation of each byte will be prefixed with this string.
  * @param {string} [suffix=""] - If specified, the hexadecimal representation of each byte will be suffixed with this string.
@@ -47,7 +47,7 @@ const convert_byte_array_to_hex_string = (byte_array, separator=' ', prefix='', 
 
 /**
  * Convert a byte array to an integer.
- * @param {number[]} byte_array - The byte array to convert.
+ * @param {Uint8Array} byte_array - The byte array to convert.
  * @param {number} [start_index=0] - The index of the start byte in byte_array to convert to integer. Can be negative, in which case this will count from the end.
  * @param {number} [end_index=byte_array.length] - The index of the end byte in byte_array to convert to integer (exclusive - the byte at this index will not be part of the integer). Can be negative, in which case this will count from the end.
  * @param {boolean} [big_endian=true] - If true, parse the integer value in big endian format, little endian otherwise.
@@ -83,10 +83,10 @@ const split_into_chunks = (slicable, chunk_length) => {
 /**
  * Convert a hexadecimal string to a byte array.
  * @param {string} hex_string - The hexadecimal string to convert. Must contain exactly two hexadecimal digits per byte.
- * @returns {number[]} The converted byte array. An array of unsigned integer numbers in range 0..255.
+ * @returns {Uint8Array} The converted byte array. An array of unsigned integer numbers in range 0..255.
  */
 const convert_hex_string_to_byte_array = (hex_string) =>
-	split_into_chunks(canonicalize_hex_string(hex_string), 2).map((byte_hex_string) => parseInt(byte_hex_string, 16))
+	Uint8Array.from(split_into_chunks(canonicalize_hex_string(hex_string), 2).map((byte_hex_string) => parseInt(byte_hex_string, 16)))
 
 /**
  * Tests if some value is neither null nor undefined.
@@ -99,18 +99,18 @@ const is_neither_null_nor_undefined = (value) =>
 /**
  * Convert an iterable to an array.
  * @param iterable - The iterable to convert.
- * @returns {Array} iterable as an array.
+ * @returns {Uint8Array} iterable as an array.
  */
 const convert_to_byte_array = (iterable) => {
 	if (typeof(iterable) === 'string') {
 		return convert_hex_string_to_byte_array(iterable);
 	}
-	return (is_neither_null_nor_undefined(iterable) ? [...iterable] : null)
+	return (is_neither_null_nor_undefined(iterable) ? Uint8Array.of(...iterable) : null)
 }
 
 /**
  * Convert a byte array-like object to a Buffer.
- * @param {Buffer|number[]} bytes - The byte array-like object to convert to a Buffer. If it is a Buffer already, bytes will simply be returned.
+ * @param {Buffer|Uint8Array} value - The byte array-like object to convert to a Buffer. If it is a Buffer already, bytes will simply be returned.
  * @returns {Buffer} A corresponding Buffer instance.
  */
 const convert_to_buffer = (value) =>
@@ -118,14 +118,15 @@ const convert_to_buffer = (value) =>
 
 /**
  * Convert a byte array-like object into several formats/representations.
- * @param {Buffer|number[]} byte_array - The byte array-like object to convert.
+ * @param {Buffer|Uint8Array} byte_array - The byte array-like object to convert.
  * @param {string} [long_format_separator=" "] - The separator character to be used in the "long" format.
  * @returns {object} An object with "buffer" (the byte array as a Buffer instance), "array" (the original byte array), "short" (the byte array as a short hexadecimal string without any non-hexadecimal characters) and "long" (the byte array as a long hexadecimal string, where the bytes are separated by string long_format_separator properties.
  */
 const create_byte_array_formats = (byte_array, long_format_separator=' ') => {
 	byte_array = convert_to_byte_array(byte_array);
 	return {
-		array: byte_array,
+		array: [...byte_array],
+		uint8array: byte_array,
 		buffer: convert_to_buffer(byte_array),
 		long: convert_byte_array_to_hex_string(byte_array, long_format_separator),
 		short: convert_byte_array_to_hex_string(byte_array, ''),
@@ -136,10 +137,10 @@ const create_byte_array_formats = (byte_array, long_format_separator=' ') => {
  * Create a new array filled with the values returned by the specified function.
  * @param {number} length - The length of the array to create.
  * @param {function} create_element_at_index - A function that will be called once for every element of the array to create. Receives a single argument, the zero-based index of the element to create.
- * @returns {*[]} A new array with the elements created by the create_element_at_index function.
+ * @returns {Uint8Array} A new array with the elements created by the create_element_at_index function.
  */
-const create_array_of_length = (length, create_element_at_index) =>
-	Array.from({length:length}, (value, index) => create_element_at_index(index))
+const create_byte_array_of_length = (length, create_element_at_index) =>
+	Uint8Array.from({length:length}, (value, index) => create_element_at_index(index))
 
 /**
  * Creates a random integer value in the specified range.
@@ -161,10 +162,10 @@ const create_random_byte = () =>
 /**
  * Creates a new array filled with random bytes.
  * @param {number} length - The length of the array to create.
- * @returns {number[]} A new array filled with random integers in range 0..255.
+ * @returns {Uint8Array} A new array filled with random integers in range 0..255.
  */
 const create_random_byte_array = (length) =>
-	create_array_of_length(length, create_random_byte)
+	create_byte_array_of_length(length, create_random_byte)
 
 /**
  * Import/Require the "events" module as "Event_Emitter".
@@ -197,10 +198,10 @@ const extract_byte_from_integer = (integer, byte_index) =>
  * @param {number} integer - The integer to convert.
  * @param {number} number_of_bytes - The number of bytes required for the value (=the length of the byte array being created).
  * @param {boolean} [big_endian=true] - If true, the created array will be big endian, little endian otherwise.
- * @returns {number[]} The converted byte array.
+ * @returns {Uint8Array} The converted byte array.
  */
 const convert_integer_to_byte_array = (integer, number_of_bytes, big_endian=true) =>
-	create_array_of_length(number_of_bytes, (index) => extract_byte_from_integer(integer, (big_endian ? (number_of_bytes - 1 - index) : index)))
+	create_byte_array_of_length(number_of_bytes, (index) => extract_byte_from_integer(integer, (big_endian ? (number_of_bytes - 1 - index) : index)))
 
 /**
  * Checks if a certain bit in a value is set.
@@ -219,7 +220,7 @@ const is_bit_set = (value, bit_index) =>
  * @returns {*[]} The end-padded array.
  */
 const pad_array_end = (array, length, pad_element) =>
-	((length > array.length) ? [...array, ...Array(length - array.length).fill(pad_element)] : array)
+	((length > array.length) ? Uint8Array.of(...array, ...Array(length - array.length).fill(pad_element)) : array)
 
 /**
  * Generator function that yields the numbers in the specified range.
@@ -237,12 +238,12 @@ const range = function*(...args) {
 
 /**
  * XOR a byte array with another byte array.
- * @param {number[]} byte_array - The byte array to XOR. The returned byte array will have the same length as this array.
- * @param {number[]} xor_byte_array - The byte array to XOR with. Doesn't need to have the same length as byte_array; if the end of this array is reached, it will continue at the beginning.
+ * @param {Uint8Array} byte_array - The byte array to XOR. The returned byte array will have the same length as this array.
+ * @param {Uint8Array} xor_byte_array - The byte array to XOR with. Doesn't need to have the same length as byte_array; if the end of this array is reached, it will continue at the beginning.
  * @param {number} [xor_byte_array_offset=0] - The index of the byte in xor_byte_array to start with.
- * @returns {number[]} The XORed array. Will have the same length as byte_array.
+ * @returns {Uint8Array} The XORed array. Will have the same length as byte_array.
  */
-const xor_arrays = (byte_array, xor_byte_array, xor_byte_array_offset=0) =>
+const xor_byte_arrays = (byte_array, xor_byte_array, xor_byte_array_offset=0) =>
 	byte_array.map((byte, index) => (byte ^ xor_byte_array[(index + xor_byte_array_offset) % xor_byte_array.length]))
 
 /**
@@ -285,14 +286,14 @@ const wait_milliseconds = (milliseconds) =>
 /**
  * Convert a string to a UTF-8-encoded byte array.
  * @param {string} string - The string to convert.
- * @returns {number[]} The converted, UTF-8-encoded byte array.
+ * @returns {Uint8Array} The converted, UTF-8-encoded byte array.
  */
 const convert_string_to_utf8_encoded_byte_array = (string) =>
 	convert_to_byte_array(Buffer.from(string, 'utf8'))
 
 /**
  * Convert UTF-8-encoded byte array to a string.
- * @param {number[]} byte_array - The UTF-8-encoded byte array to convert.
+ * @param {Uint8Array} byte_array - The UTF-8-encoded byte array to convert.
  * @returns {string} The converted string.
  */
 const convert_utf8_encoded_byte_array_to_string = (byte_array) =>
@@ -340,7 +341,7 @@ module.exports = {
 	pad_array_end: pad_array_end,
 	split_into_chunks: split_into_chunks,
 	range: range,
-	xor_arrays: xor_arrays,
+	xor_byte_arrays: xor_byte_arrays,
 	time_limit_promise: time_limit_promise,
 	wait_milliseconds: wait_milliseconds,
 	convert_string_to_utf8_encoded_byte_array: convert_string_to_utf8_encoded_byte_array,

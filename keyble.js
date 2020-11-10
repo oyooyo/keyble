@@ -23,7 +23,7 @@ const {
 } = require('./message_types.js');
 
 // Import the required functions from the "utils" submodule.
-const {are_byte_arrays_equal, convert_byte_array_to_hex_string, convert_byte_array_to_integer, convert_hex_string_to_byte_array, convert_to_byte_array, create_byte_array_formats, create_random_byte_array, Event_Emitter, generic_ceil, convert_integer_to_byte_array, is_bit_set, pad_array_end, split_into_chunks, range, xor_arrays, time_limit_promise} = require('./utils.js');
+const {are_byte_arrays_equal, convert_byte_array_to_hex_string, convert_byte_array_to_integer, convert_hex_string_to_byte_array, convert_to_byte_array, create_byte_array_formats, create_random_byte_array, Event_Emitter, generic_ceil, convert_integer_to_byte_array, is_bit_set, pad_array_end, split_into_chunks, range, xor_byte_arrays, time_limit_promise} = require('./utils.js');
 
 /**
  * Import/require the "simble" module that is being used for Bluetooth communication as "simble".
@@ -60,7 +60,6 @@ const log_communication_debug_message = create_log_debug_message_function('keybl
  */
 const log_event_debug_message = create_log_debug_message_function('keyble:event');
 
-//- _REQUIRE_ES_ 'library/convert_to_byte_array.js'
 /**
  * Import/require the "aes-js" module that is being used for AES encryption as "aesjs".
  * @private
@@ -72,74 +71,74 @@ const aesjs = require('aes-js');
 /**
  * AES-128-encrypt a byte array in ECB mode.
  * @private
- * @param {number[]} data - The data to encrypt.
- * @param {number[]} key - The AES-128 key to encrypt the data with.
- * @returns {number[]} The encrypted data.
+ * @param {Uint8Array} data - The data to encrypt.
+ * @param {Uint8Array} key - The AES-128 key to encrypt the data with.
+ * @returns {Uint8Array} The encrypted data.
  */
 const encrypt_aes_ecb = (data, key) =>
-	convert_to_byte_array((new aesjs.ModeOfOperation.ecb(key)).encrypt(data))
+	(new aesjs.ModeOfOperation.ecb(key)).encrypt(data)
 
 //- _REQUIRE_ES_ 'library/convert_integer_to_byte_array.js'
 /**
  * Compute a nonce.
  * @private
  * @param {number} message_type_id - The ID of the message type.
- * @param {number[]} session_open_nonce - The session open nonce.
+ * @param {Uint8Array} session_open_nonce - The session open nonce.
  * @param {number} security_counter - The security counter.
- * @returns {number[]} The computed nonce.
+ * @returns {Uint8Array} The computed nonce.
  */
 const compute_nonce = (message_type_id, session_open_nonce, security_counter) =>
-	[message_type_id, ...session_open_nonce, 0, 0, ...convert_integer_to_byte_array(security_counter, 2)]
+	Uint8Array.of(message_type_id, ...session_open_nonce, 0, 0, ...convert_integer_to_byte_array(security_counter, 2))
 
 //- _REQUIRE_ES_ 'library/generic_ceil.js'
 //- _REQUIRE_ES_ 'library/pad_array_end.js'
 //- _REQUIRE_ES_ 'library/convert_integer_to_byte_array.js'
 //- _REQUIRE_ES_ 'library/range.js'
-//- _REQUIRE_ES_ 'library/xor_arrays.js'
+//- _REQUIRE_ES_ 'library/xor_byte_arrays.js'
 /**
  * Compute an "authentication value".
  * @private
- * @param {number[]} data - The data to compute the authentication value for.
+ * @param {Uint8Array} data - The data to compute the authentication value for.
  * @param {number} message_type_id - The message type ID.
- * @param {number[]} session_open_nonce - The session open nonce.
+ * @param {Uint8Array} session_open_nonce - The session open nonce.
  * @param {number} security_counter - The security counter.
- * @param {number[]} key - The AES-128 key.
- * @returns {number[]} The authentication value.
+ * @param {Uint8Array} key - The AES-128 key.
+ * @returns {Uint8Array} The authentication value.
  */
 const compute_authentication_value = (data, message_type_id, session_open_nonce, security_counter, key) => {
 	const nonce = compute_nonce(message_type_id, session_open_nonce, security_counter);
 	const padded_data_length = generic_ceil(data.length, 16);
 	const padded_data = pad_array_end(data, padded_data_length, 0);
-	let encrypted_xor_data = encrypt_aes_ecb([9, ...nonce, ...convert_integer_to_byte_array(data.length, 2)], key);
+	let encrypted_xor_data = encrypt_aes_ecb(Uint8Array.of(9, ...nonce, ...convert_integer_to_byte_array(data.length, 2)), key);
 	for (let padded_data_offset of range(0, padded_data_length, 16)) {
-		encrypted_xor_data = encrypt_aes_ecb(xor_arrays(encrypted_xor_data, padded_data, padded_data_offset), key);
+		encrypted_xor_data = encrypt_aes_ecb(xor_byte_arrays(encrypted_xor_data, padded_data, padded_data_offset), key);
 	}
-	return xor_arrays(
+	return xor_byte_arrays(
 		encrypted_xor_data.slice(0, 4),
-		encrypt_aes_ecb([1, ...nonce, 0, 0], key),
+		encrypt_aes_ecb(Uint8Array.of(1, ...nonce, 0, 0), key),
 	);
 }
 
 //- _REQUIRE_ES_ 'library/range.js'
 //- _REQUIRE_ES_ 'library/convert_integer_to_byte_array.js'
-//- _REQUIRE_ES_ 'library/xor_arrays.js'
+//- _REQUIRE_ES_ 'library/xor_byte_arrays.js'
 /**
  * Encrypt or Decrypt a byte array that is part of a Message.
  * @private
- * @param {number[]} byte_array - The byte array to encrypt or decrypt. If byte_array is already encrypted it will be decrypted and vice versa.
+ * @param {Uint8Array} byte_array - The byte array to encrypt or decrypt. If byte_array is already encrypted it will be decrypted and vice versa.
  * @param {number} message_type_id - The ID of the message type.
- * @param {number[]} session_open_nonce - The session open nonce.
+ * @param {Uint8Array} session_open_nonce - The session open nonce.
  * @param {number} security_counter - The security counter.
- * @param {number[]} key - The AES-128 key to use for encryption/decryption.
- * @returns {number[]} The encrypted or decrypted byte array.
+ * @param {Uint8Array} key - The AES-128 key to use for encryption/decryption.
+ * @returns {Uint8Array} The encrypted or decrypted byte array.
  */
 const crypt_data = (byte_array, message_type_id, session_open_nonce, security_counter, key) => {
 	const nonce = compute_nonce(message_type_id, session_open_nonce, security_counter);
 	const keystream_byte_array = [];
 	for (let index of range(Math.ceil(byte_array.length / 16))) {
-		keystream_byte_array.push(...encrypt_aes_ecb([1, ...nonce, ...convert_integer_to_byte_array((index + 1), 2)], key));
+		keystream_byte_array.push(...encrypt_aes_ecb(Uint8Array.of(1, ...nonce, ...convert_integer_to_byte_array((index + 1), 2)), key));
 	}
-	return xor_arrays(byte_array, keystream_byte_array);
+	return xor_byte_arrays(byte_array, Uint8Array.from(keystream_byte_array));
 }
 
 //- _REQUIRE_ES_ 'library/is_bit_set.js'
@@ -254,7 +253,7 @@ const Key_Ble = class extends Event_Emitter {
 			),
 			security_counter: this.local_security_counter,
 			authentication_value: compute_authentication_value(
-				pad_array_end([this.user_id, ...this.user_key], 23, 0),
+				pad_array_end(Uint8Array.of(this.user_id, ...this.user_key), 23, 0),
 				Pairing_Request_Message.id,
 				this.remote_session_nonce,
 				this.local_security_counter,
@@ -321,8 +320,8 @@ const Key_Ble = class extends Event_Emitter {
 		this.emit('received:fragment', message_fragment);
 		if (message_fragment.is_last()) {
 			let message_data_bytes = this.received_message_fragments.reduce((byte_array, message_fragment) =>
-					[...byte_array, ...message_fragment.get_data_byte_array()]
-				, []);
+					Uint8Array.of(...byte_array, ...message_fragment.get_data_byte_array())
+				, Uint8Array.of());
 			const Message_Type = MESSAGE_TYPES_BY_ID[this.received_message_fragments[0].get_message_type_id()];
 			if (Message_Type.is_secure()) {
 				const message_security_counter = convert_byte_array_to_integer(message_data_bytes, -6, -4);
@@ -424,7 +423,7 @@ const Key_Ble = class extends Event_Emitter {
 			message_data_bytes = message.data_bytes;
 		}
 		const message_fragments = split_into_chunks([message.id, ...message_data_bytes], 15).map((fragment_bytes, index, chunks) =>
-			(new Message_Fragment([(chunks.length - 1 - index + ((index === 0) ? 128 : 0)), ...pad_array_end(fragment_bytes, 15, 0)]))
+			(new Message_Fragment(Uint8Array.of((chunks.length - 1 - index + ((index === 0) ? 128 : 0)), ...pad_array_end(fragment_bytes, 15, 0))))
 		);
 		log_communication_debug_message(`Sending message of type ${message.label}, data bytes <${convert_byte_array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
 		await this.send_message_fragments(message_fragments);

@@ -31,7 +31,7 @@ const Abstract_Message = class {
 		return (new this(data));
 	}
 	constructor(data={}) {
-		this.data_bytes = (Array.isArray(data) ? data : this.constructor.encode(data));
+		this.data_bytes = ((data instanceof Uint8Array) ? data : this.constructor.encode(data));
 		this.data = this.constructor.decode(this.data_bytes);
 	}
 	static decode(data_bytes) {
