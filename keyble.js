@@ -290,6 +290,23 @@ const Key_Ble = class extends Event_Emitter {
 		await this.await_event('status:UNLOCKED');
 	}
 
+	async toggle() {
+		if (this.lock_status_id === null) {
+			await this.request_status();
+		}
+		switch(this.lock_status_id) {
+			case 2:
+			case 4:
+				await this.lock();
+				break;
+			case 3:
+				await this.unlock();
+				break;
+			default:
+				throw (new Error('Invalid lock status for toggle()'));
+		}
+	}
+
 	// Open the smart lock
 	async open() {
 		if (this.lock_status_id === 4) {

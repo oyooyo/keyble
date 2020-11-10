@@ -7,7 +7,7 @@
 
 /**
  * The "send_command" submodule.
- * Command line tool for controlling (lock/unlock/open) eQ-3 eqiva Bluetooth smart locks.
+ * Command line tool for controlling (lock/unlock/open/toggle) eQ-3 eqiva Bluetooth smart locks.
  * @module send_command
  */
 
@@ -54,6 +54,7 @@ const send_commands_then_exit = async ({address, user_id, user_key, auto_disconn
 				unlock: key_ble.unlock,
 				open: key_ble.open,
 				status: key_ble.request_status,
+				toggle: key_ble.toggle,
 			}[input_command.toLowerCase()];
 			if (! action) {
 				throw new Error(`Unknown command "${command}"`);
@@ -75,7 +76,7 @@ const send_commands_then_exit = async ({address, user_id, user_key, auto_disconn
 if (require.main == module) {
 	// Set up the command line arguments parser.
 	const argument_parser = new ArgumentParser({
-		description: 'Control (lock/unlock/open) an eQ-3 eqiva Bluetooth smart lock.',
+		description: 'Control (lock/unlock/open/toggle) an eQ-3 eqiva Bluetooth smart lock.',
 	});
 	argument_parser.add_argument('--address', '-a', {
 		required: true,
@@ -108,7 +109,7 @@ if (require.main == module) {
 		help: `The timeout time. Commands must finish within this many seconds, otherwise there is an error. A value of 0 will deactivate timeouts (default: ${DEFAULT_TIMEOUT_TIME})`,
 	});
 	argument_parser.add_argument('--command', '-c', {
-		choices: ['lock', 'open', 'unlock', 'status'],
+		choices: ['lock', 'open', 'unlock', 'status', 'toggle'],
 		required: false,
 		type: String,
 		help: 'The command to perform. If not provided on the command line, the command(s) will be read as input lines from STDIN instead',
