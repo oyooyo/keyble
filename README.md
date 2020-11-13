@@ -9,6 +9,10 @@ This is where *keyble* steps in. *keyble* allows controlling the smart lock from
 
 If you intend to use *keyble* to control an eqiva Bluetooth Smart Lock, you might also be interested in the cheap [eQ-3 eqiva Bluetooth Smart Radiator Thermostat](https://www.eq-3.com/products/homematic/detail/bluetooth-smart-radiator-thermostat.html)s from the same vendor. I wrote [a similar tool for controlling eQ-3 eqiva Bluetooth radiator thermostats](https://github.com/oyooyo/nixfilter-rtble) that works almost identical to *keyble*.
 
+## *keyble* soon to be divided into *keyble* and *keyble-cli*
+
+*keyble* will soon be divided into two separate npm packages, *keyble* and *keyble-cli*. *keyble* will then only contain the core library, to be used by other Node.js packages. The command-line scripts will move to *keyble-cli*. So if you're currently using *keyble*, you will then need to install *keyble-cli* instead.
+
 ## Current status
 
 *keyble* currently only provides a few basic features:
@@ -331,6 +335,20 @@ This software was developed against firmware version 1.7, which is the latest fi
 
 If the vendor releases a newer firmware version, better not instantly update the firmware; wait for confirmation that the new firmware version is safe.
 
+## ToDo
+
+- Document API
+- Switch to semantic versioning starting with version 1.0.0
+- Create keyble-cli (CLI tools)
+	- Add tool to configure lock to keyble-cli
+	- Add tool to parse key card data?
+	- Create a single executable
+- Create keyble-mqtt (MQTT)
+- Create keyble-nodered (Custom keyble node for Node Red)
+- Create/Update/fix keyble-iobroker (Adapter for ioBroker)
+- Hide sensible informations in output
+- Convert to typescript?
+
 ## Acknowledgements
 
 A big thanks to everyone who helped developing and improving this software.
@@ -338,4 +356,4 @@ A big thanks to everyone who helped developing and improving this software.
 Especially...
 
 - [henfri](https://github.com/henfri), who provided lots of useful feedback and helped improving the code
-- [Ircama](https://github.com/Ircama), whose feedback etc. was also extremely helpful
+- [Ircama](https://github.com/Ircama), who also provided lots of useful feedback and provided the toggle() command

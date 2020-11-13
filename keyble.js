@@ -22,16 +22,100 @@ const {
 	MESSAGE_TYPES_BY_ID,
 } = require('./message_types.js');
 
+/*
+const SERVICE_UUID = '58e06900-15d8-11e6-b737-0002a5d5c51b';
+const SEND_CHARACTERISTIC_UUID = '3141dd40-15db-11e6-a24b-0002a5d5c51b';
+const RECEIVE_CHARACTERISTIC_UUID = '359d4820-15db-11e6-82bd-0002a5d5c51b';
+*/
+
+const SERVICE_UUID = '58e0690015d811e6b7370002a5d5c51b';
+const SEND_CHARACTERISTIC_UUID = '3141dd4015db11e6a24b0002a5d5c51b';
+const RECEIVE_CHARACTERISTIC_UUID = '359d482015db11e682bd0002a5d5c51b';
+
+// TODO remove
+/**
+ * Import/require the "noble" module that is being used for Bluetooth communication as "noble".
+ * @private
+ * @requires noble
+ * @see {@link https://github.com/abandonware/noble#readme}
+ */
+const noble = require('@abandonware/noble');
+
 // Import the required functions from the "utils" submodule.
-const {are_byte_arrays_equal, convert_byte_array_to_hex_string, convert_byte_array_to_integer, convert_hex_string_to_byte_array, convert_to_byte_array, create_byte_array_formats, create_random_byte_array, Event_Emitter, generic_ceil, convert_integer_to_byte_array, is_bit_set, pad_array_end, split_into_chunks, range, xor_byte_arrays, time_limit_promise} = require('./utils.js');
+const {
+	are_uint8arrays_equal,
+	convert_uint8array_to_hex_string,
+	convert_uint8array_to_integer,
+	convert_hex_string_to_uint8array,
+	convert_to_uint8array,
+	create_uint8array_formats,
+	create_random_uint8array,
+	Event_Emitter,
+	generic_ceil,
+	convert_integer_to_uint8array,
+	is_bit_set,
+	pad_array_end,
+	split_into_chunks,
+	range,
+	xor_uint8arrays,
+	time_limit_promise,
+	canonicalize_mac_address,
+	canonicalize_hex_string,
+	register_temporary_event_listener,
+} = require('./utils.js');
 
 /**
- * Import/require the "simble" module that is being used for Bluetooth communication as "simble".
- * @private
- * @requires simble
- * @see {@link https://github.com/oyooyo/simble#readme}
+ * Waits for the specified noble state.
+ * 
+ * @async
+ * @param {String} desired_noble_state - the desired noble state.
+ * @returns {String} the desired noble state.
  */
-const simble = require('simble');
+const ensure_noble_state = ((desired_noble_state) => ((noble.state === desired_noble_state) ? Promise.resolve(desired_noble_state) : (new Promise((resolve, reject) => {
+	register_temporary_event_listener(noble, 'stateChange', ((noble_state) => {
+		if (noble_state === desired_noble_state) {
+			resolve(desired_noble_state);
+			return true;
+		}
+	}));
+}))));
+
+/**
+ * How many milliseconds to wait for noble to reach the "poweredOn" state.
+ * @private
+ * @constant
+ * @type {number}
+ */
+const NOBLE_STATE_TIMEOUT = 5000;
+
+/**
+ * Wait up to NOBLE_STATE_TIMEOUT milliseconds for noble to reach the "poweredOn" state.
+ * @async
+ */
+const ensure_noble_is_poweredon = async () => {
+	await time_limit_promise(ensure_noble_state('poweredOn'), NOBLE_STATE_TIMEOUT, `noble did not change to the "poweredOn" state within ${NOBLE_STATE_TIMEOUT} milliseconds. This usually indicates that either no Bluetooth hardware is available, or that you do not have sufficient permissions for accessing the Bluetooth hardware.`);
+}
+
+/**
+ * 
+ * 
+ * 
+ */
+const scan_for_noble_peripheral = (is_expected_device_function) => {
+	return ensure_noble_is_poweredon()
+	.then(() => new Promise(async (resolve, reject) => {
+		const on_peripheral_disconvered = async (noble_peripheral) => {
+			if (is_expected_device_function(noble_peripheral)) {
+				await noble.stopScanningAsync();
+				noble.off('discover', on_peripheral_disconvered);
+				resolve(noble_peripheral);
+			}
+		}
+		noble.on('discover', on_peripheral_disconvered);
+		await noble.startScanningAsync();
+	}));
+}
+
 
 /**
  * Import/Require the "debug" module as "create_log_debug_message_function".
@@ -78,7 +162,7 @@ const aesjs = require('aes-js');
 const encrypt_aes_ecb = (data, key) =>
 	(new aesjs.ModeOfOperation.ecb(key)).encrypt(data)
 
-//- _REQUIRE_ES_ 'library/convert_integer_to_byte_array.js'
+//- _REQUIRE_ES_ 'library/convert_integer_to_uint8array.js'
 /**
  * Compute a nonce.
  * @private
@@ -88,13 +172,13 @@ const encrypt_aes_ecb = (data, key) =>
  * @returns {Uint8Array} The computed nonce.
  */
 const compute_nonce = (message_type_id, session_open_nonce, security_counter) =>
-	Uint8Array.of(message_type_id, ...session_open_nonce, 0, 0, ...convert_integer_to_byte_array(security_counter, 2))
+	Uint8Array.of(message_type_id, ...session_open_nonce, 0, 0, ...convert_integer_to_uint8array(security_counter, 2))
 
 //- _REQUIRE_ES_ 'library/generic_ceil.js'
 //- _REQUIRE_ES_ 'library/pad_array_end.js'
-//- _REQUIRE_ES_ 'library/convert_integer_to_byte_array.js'
+//- _REQUIRE_ES_ 'library/convert_integer_to_uint8array.js'
 //- _REQUIRE_ES_ 'library/range.js'
-//- _REQUIRE_ES_ 'library/xor_byte_arrays.js'
+//- _REQUIRE_ES_ 'library/xor_uint8arrays.js'
 /**
  * Compute an "authentication value".
  * @private
@@ -109,36 +193,36 @@ const compute_authentication_value = (data, message_type_id, session_open_nonce,
 	const nonce = compute_nonce(message_type_id, session_open_nonce, security_counter);
 	const padded_data_length = generic_ceil(data.length, 16);
 	const padded_data = pad_array_end(data, padded_data_length, 0);
-	let encrypted_xor_data = encrypt_aes_ecb(Uint8Array.of(9, ...nonce, ...convert_integer_to_byte_array(data.length, 2)), key);
+	let encrypted_xor_data = encrypt_aes_ecb(Uint8Array.of(9, ...nonce, ...convert_integer_to_uint8array(data.length, 2)), key);
 	for (let padded_data_offset of range(0, padded_data_length, 16)) {
-		encrypted_xor_data = encrypt_aes_ecb(xor_byte_arrays(encrypted_xor_data, padded_data, padded_data_offset), key);
+		encrypted_xor_data = encrypt_aes_ecb(xor_uint8arrays(encrypted_xor_data, padded_data, padded_data_offset), key);
 	}
-	return xor_byte_arrays(
+	return xor_uint8arrays(
 		encrypted_xor_data.slice(0, 4),
 		encrypt_aes_ecb(Uint8Array.of(1, ...nonce, 0, 0), key),
 	);
 }
 
 //- _REQUIRE_ES_ 'library/range.js'
-//- _REQUIRE_ES_ 'library/convert_integer_to_byte_array.js'
-//- _REQUIRE_ES_ 'library/xor_byte_arrays.js'
+//- _REQUIRE_ES_ 'library/convert_integer_to_uint8array.js'
+//- _REQUIRE_ES_ 'library/xor_uint8arrays.js'
 /**
  * Encrypt or Decrypt a byte array that is part of a Message.
  * @private
- * @param {Uint8Array} byte_array - The byte array to encrypt or decrypt. If byte_array is already encrypted it will be decrypted and vice versa.
+ * @param {Uint8Array} uint8array - The byte array to encrypt or decrypt. If uint8array is already encrypted it will be decrypted and vice versa.
  * @param {number} message_type_id - The ID of the message type.
  * @param {Uint8Array} session_open_nonce - The session open nonce.
  * @param {number} security_counter - The security counter.
  * @param {Uint8Array} key - The AES-128 key to use for encryption/decryption.
  * @returns {Uint8Array} The encrypted or decrypted byte array.
  */
-const crypt_data = (byte_array, message_type_id, session_open_nonce, security_counter, key) => {
+const crypt_data = (uint8array, message_type_id, session_open_nonce, security_counter, key) => {
 	const nonce = compute_nonce(message_type_id, session_open_nonce, security_counter);
-	const keystream_byte_array = [];
-	for (let index of range(Math.ceil(byte_array.length / 16))) {
-		keystream_byte_array.push(...encrypt_aes_ecb(Uint8Array.of(1, ...nonce, ...convert_integer_to_byte_array((index + 1), 2)), key));
+	const keystream_uint8array = [];
+	for (let index of range(Math.ceil(uint8array.length / 16))) {
+		keystream_uint8array.push(...encrypt_aes_ecb(Uint8Array.of(1, ...nonce, ...convert_integer_to_uint8array((index + 1), 2)), key));
 	}
-	return xor_byte_arrays(byte_array, Uint8Array.from(keystream_byte_array));
+	return xor_uint8arrays(uint8array, Uint8Array.from(keystream_uint8array));
 }
 
 //- _REQUIRE_ES_ 'library/is_bit_set.js'
@@ -149,11 +233,11 @@ const crypt_data = (byte_array, message_type_id, session_open_nonce, security_co
  * @private
  */
 const Message_Fragment = class {
-	constructor(byte_array) {
-		this.byte_array = byte_array;
+	constructor(uint8array) {
+		this.uint8array = uint8array;
 	}
 	get_status_byte() {
-		return this.byte_array[0];
+		return this.uint8array[0];
 	}
 	get_number_of_remaining_fragments() {
 		return (this.get_status_byte() & 0x7F);
@@ -162,7 +246,7 @@ const Message_Fragment = class {
 		if (! this.is_first()) {
 			throw (new Error('Is not first fragment'));
 		}
-		return this.byte_array[1];
+		return this.uint8array[1];
 	}
 	is_first() {
 		return is_bit_set(this.get_status_byte(), 7);
@@ -173,8 +257,8 @@ const Message_Fragment = class {
 	is_complete_message() {
 		return (this.is_first() && this.is_last());
 	}
-	get_data_byte_array() {
-		return this.byte_array.slice(this.is_first() ? 2 : 1);
+	get_data_uint8array() {
+		return this.uint8array.slice(this.is_first() ? 2 : 1);
 	}
 }
 
@@ -198,9 +282,9 @@ const Key_Ble = class extends Event_Emitter {
 
 	constructor({address, user_id=255, user_key, auto_disconnect_time=15.0, status_update_time}) {
 		super()
-		this.address = simble.canonicalize.address(address);
+		this.address = canonicalize_mac_address(address);
 		this.user_id = user_id;
-		this.user_key = convert_to_byte_array(user_key);
+		this.user_key = convert_to_uint8array(user_key);
 		this.auto_disconnect_time = auto_disconnect_time;
 		this.set_status_update_time(status_update_time);
 		this.received_message_fragments = [];
@@ -239,8 +323,8 @@ const Key_Ble = class extends Event_Emitter {
 	}
 
 	async pairing_request(card_key) {
-		card_key = convert_to_byte_array(card_key);
-		this.user_key = create_random_byte_array(16);
+		card_key = convert_to_uint8array(card_key);
+		this.user_key = create_random_uint8array(16);
 		await this.ensure_nonces_exchanged();
 		await this.send_message(Pairing_Request_Message.create({
 			user_id: this.user_id,
@@ -263,7 +347,7 @@ const Key_Ble = class extends Event_Emitter {
 		await this.await_message('ANSWER_WITH_SECURITY');
 		return {
 			user_id: this.user_id,
-			user_key: convert_byte_array_to_hex_string(this.user_key, ''),
+			user_key: convert_uint8array_to_hex_string(this.user_key, ''),
 		};
 	}
 
@@ -336,12 +420,12 @@ const Key_Ble = class extends Event_Emitter {
 		this.received_message_fragments.push(message_fragment);
 		this.emit('received:fragment', message_fragment);
 		if (message_fragment.is_last()) {
-			let message_data_bytes = this.received_message_fragments.reduce((byte_array, message_fragment) =>
-					Uint8Array.of(...byte_array, ...message_fragment.get_data_byte_array())
+			let message_data_bytes = this.received_message_fragments.reduce((uint8array, message_fragment) =>
+					Uint8Array.of(...uint8array, ...message_fragment.get_data_uint8array())
 				, Uint8Array.of());
 			const Message_Type = MESSAGE_TYPES_BY_ID[this.received_message_fragments[0].get_message_type_id()];
 			if (Message_Type.is_secure()) {
-				const message_security_counter = convert_byte_array_to_integer(message_data_bytes, -6, -4);
+				const message_security_counter = convert_uint8array_to_integer(message_data_bytes, -6, -4);
 				if (message_security_counter <= this.remote_security_counter) {
 					throw (new Error('Received message contains invalid security counter'));
 				}
@@ -349,7 +433,7 @@ const Key_Ble = class extends Event_Emitter {
 				this.remote_security_counter = message_security_counter;
 				message_data_bytes = crypt_data(message_data_bytes.slice(0, -6), Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
 				const computed_authentication_value = compute_authentication_value(message_data_bytes, Message_Type.id, this.local_session_nonce, this.remote_security_counter, this.user_key);
-				if (! are_byte_arrays_equal(message_authentication_value, computed_authentication_value)) {
+				if (! are_uint8arrays_equal(message_authentication_value, computed_authentication_value)) {
 					throw (new Error('Received message contains invalid authentication value'));
 				}
 			} else {
@@ -365,7 +449,7 @@ const Key_Ble = class extends Event_Emitter {
 	}
 
 	on_message_received(message) {
-		log_communication_debug_message(`Received message of type ${message.label}, data bytes <${convert_byte_array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
+		log_communication_debug_message(`Received message of type ${message.label}, data bytes <${convert_uint8array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
 		this.emit('received:message', message);
 		this.emit(`received:message:${message.label}`, message);
 		switch(message.constructor) {
@@ -410,8 +494,8 @@ const Key_Ble = class extends Event_Emitter {
 	async send_message_fragment(message_fragment) {
 		await this.ensure_connected();
 		// Somehow, waiting for the Promise to fulfill doesn't work. The FRAGMENT_ACK message is received before the send_characteristic.write() Promise fulfills.
-		//await this.send_characteristic.write(message_fragment.byte_array);
-		this.send_characteristic.write(message_fragment.byte_array);
+		//await this.send_characteristic.write(message_fragment.uint8array);
+		this.send_characteristic.write(Buffer.from(message_fragment.uint8array));
 		if (! message_fragment.is_last()) {
 			await this.await_message('FRAGMENT_ACK');
 		}
@@ -431,7 +515,7 @@ const Key_Ble = class extends Event_Emitter {
 			crypt_data(padded_data, message.id, this.remote_session_nonce, this.local_security_counter, this.user_key);
 			message_data_bytes = [
 				...crypt_data(padded_data, message.id, this.remote_session_nonce, this.local_security_counter, this.user_key),
-				...convert_integer_to_byte_array(this.local_security_counter, 2),
+				...convert_integer_to_uint8array(this.local_security_counter, 2),
 				...compute_authentication_value(padded_data, message.id, this.remote_session_nonce, this.local_security_counter, this.user_key),
 			];
 			this.local_security_counter++;
@@ -442,7 +526,7 @@ const Key_Ble = class extends Event_Emitter {
 		const message_fragments = split_into_chunks([message.id, ...message_data_bytes], 15).map((fragment_bytes, index, chunks) =>
 			(new Message_Fragment(Uint8Array.of((chunks.length - 1 - index + ((index === 0) ? 128 : 0)), ...pad_array_end(fragment_bytes, 15, 0))))
 		);
-		log_communication_debug_message(`Sending message of type ${message.label}, data bytes <${convert_byte_array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
+		log_communication_debug_message(`Sending message of type ${message.label}, data bytes <${convert_uint8array_to_hex_string(message.data_bytes, ' ')}>, data ${JSON.stringify(message.data)}`);
 		await this.send_message_fragments(message_fragments);
 	}
 
@@ -450,25 +534,30 @@ const Key_Ble = class extends Event_Emitter {
 		if (this.peripheral) {
 			return this.peripheral;
 		}
-		const peripheral = await simble.scan_for_peripheral(simble.filter.address(this.address));
-		await peripheral.ensure_discovered();
-		this.peripheral = peripheral;
-		peripheral.set_auto_disconnect_time(this.auto_disconnect_time * 1000);
-		peripheral.on('connected', () => {
+		const peripheral = await scan_for_noble_peripheral((noble_peripheral) => (canonicalize_mac_address(noble_peripheral.address) === this.address));
+		peripheral.once('connect', () => {
 			this.state = CONNECTION_STATE.CONNECTED;
 			this.emit('connected');
 		});
-		peripheral.on('disconnected', () => {
+		peripheral.once('disconnect', () => {
 			this.state = CONNECTION_STATE.DISCONNECTED;
+			receive_characteristic.off('data', on_data_received);
 			this.peripheral = null;
+			this.send_characteristic = null;
+			this.receive_characteristic = null;
 			this.emit('disconnected');
 		});
-		const communication_service = this.peripheral.get_discovered_service('58e06900-15d8-11e6-b737-0002a5d5c51b');
-		this.send_characteristic = communication_service.get_discovered_characteristic('3141dd40-15db-11e6-a24b-0002a5d5c51b');
-		this.receive_characteristic = communication_service.get_discovered_characteristic('359d4820-15db-11e6-82bd-0002a5d5c51b');
-		await this.receive_characteristic.subscribe((message_fragment_bytes) => {
+		await peripheral.connectAsync();
+		const {services:[communication_service], characteristics:[send_characteristic, receive_characteristic]} = await peripheral.discoverSomeServicesAndCharacteristicsAsync([SERVICE_UUID], [SEND_CHARACTERISTIC_UUID, RECEIVE_CHARACTERISTIC_UUID]);
+		const on_data_received = (message_fragment_bytes) => {
 			this.on_message_fragment_received(new Message_Fragment(message_fragment_bytes));
-		});
+		}
+		receive_characteristic.on('data', on_data_received);
+		await receive_characteristic.subscribeAsync();
+		//peripheral.set_auto_disconnect_time(this.auto_disconnect_time * 1000);
+		this.peripheral = peripheral;
+		this.send_characteristic = send_characteristic;
+		this.receive_characteristic = receive_characteristic;
 	}
 
 	async ensure_connected() {
@@ -476,14 +565,13 @@ const Key_Ble = class extends Event_Emitter {
 			return;
 		}
 		await this.ensure_peripheral();
-		await this.peripheral.ensure_discovered();
 	}
 
 	async ensure_nonces_exchanged() {
 		if (this.state >= CONNECTION_STATE.NONCES_EXCHANGED) {
 			return;
 		}
-		this.local_session_nonce = create_random_byte_array(8);
+		this.local_session_nonce = create_random_uint8array(8);
 		await this.send_message(Connection_Request_Message.create({
 			user_id: this.user_id,
 			local_session_nonce: this.local_session_nonce,
@@ -530,8 +618,8 @@ const KEY_CARD_DATA_PATTERN = '^M(?<address>[0-9A-F]{12})K(?<key>[0-9A-F]{32})(?
  */
 const KEY_CARD_DATA_REGEXP = (new RegExp(KEY_CARD_DATA_PATTERN));
 
-//- _REQUIRE_ES_ 'library/create_byte_array_formats.js'
-//- _REQUIRE_ES_ 'library/convert_hex_string_to_byte_array.js'
+//- _REQUIRE_ES_ 'library/create_uint8array_formats.js'
+//- _REQUIRE_ES_ 'library/convert_hex_string_to_uint8array.js'
 /**
  * Parse the data of a "Key Card".
  * @public
@@ -542,11 +630,11 @@ const KEY_CARD_DATA_REGEXP = (new RegExp(KEY_CARD_DATA_PATTERN));
 const parse_key_card_data = (key_card_data_string) => {
 	const match = key_card_data_string.trim().match(KEY_CARD_DATA_REGEXP);
 	if (! match) {
-		throw (new Error(`"${key_card_data_string}" is not a valid Key Card data string`));
+		throw (new Error(`"${key_card_data_string}" is not a valid Key Card data string; does not match pattern "${KEY_CARD_DATA_PATTERN}"`));
 	}
 	return {
-		address: create_byte_array_formats(convert_hex_string_to_byte_array(match.groups.address), ':').long,
-		key: create_byte_array_formats(convert_hex_string_to_byte_array(match.groups.key), ' ').short,
+		address: create_uint8array_formats(convert_hex_string_to_uint8array(match.groups.address), ':').long,
+		key: create_uint8array_formats(convert_hex_string_to_uint8array(match.groups.key), ' ').short,
 		serial: match.groups.serial,
 	}
 }
@@ -562,6 +650,8 @@ module.exports = {
 		regexp: KEY_CARD_DATA_REGEXP,
 	},
 	utils: {
+		canonicalize_hex_string: canonicalize_hex_string,
+		canonicalize_mac_address: canonicalize_mac_address,
 		time_limit: time_limit_promise,
 	},
 };

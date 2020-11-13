@@ -1,12 +1,8 @@
 {
 	"name": "keyble",
-	"version": "0.2.6",
-	"description": "Command line tools and library for controlling eQ-3 eqiva Bluetooth smart locks",
+	"version": "0.3.0",
+	"description": "Library for controlling eQ-3 eqiva Bluetooth smart locks",
 	"main": "keyble.js",
-	"bin": {
-		"keyble-sendcommand": "./send_command.js",
-		"keyble-registeruser": "./register_user.js"
-	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
@@ -19,11 +15,12 @@
 	},
 	"keywords": [
 		"eqiva",
-		"eQ-3",
+		"eq-3",
 		"key-ble",
-		"Smart Lock"
+		"keyble",
+		"smart lock"
 	],
-	"homepage": "https://oyooyo.github.io/keyble/",
+	"homepage": "https://oyooyo.github.io/keyble",
 	"author": {
 		"name": "oyooyo"
 	},
@@ -32,10 +29,9 @@
 		"url": "https://github.com/oyooyo/keyble/issues"
 	},
 	"dependencies": {
+		"@abandonware/noble": "^1.9.2-10",
 		"aes-js": "^3.1.2",
-		"argparse": "^2.0.1",
-		"debug": "^4.2.0",
-		"simble": "^0.2.6"
+		"debug": "^4.2.0"
 	},
 	"files": [
 		"*.js",

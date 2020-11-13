@@ -12,10 +12,10 @@
  * Import required functions from the 'utils" submodule.
  */
 const {
-	convert_byte_array_to_integer,
-	convert_integer_to_byte_array,
-	convert_string_to_utf8_encoded_byte_array,
-	convert_utf8_encoded_byte_array_to_string,
+	convert_uint8array_to_integer,
+	convert_integer_to_uint8array,
+	convert_string_to_utf8_encoded_uint8array,
+	convert_utf8_encoded_uint8array_to_string,
 	create_lookup_table_by_object_property_value,
 	is_bit_set,
 	pad_array_end,
@@ -187,8 +187,8 @@ const Mount_Options_Set_Message = create_message_type(/** @lends Mount_Options_S
 	},
 });
 
-//- _REQUIRE_ES_ '../library/convert_integer_to_byte_array.js'
-//- _REQUIRE_ES_ '../library/convert_byte_array_to_integer.js'
+//- _REQUIRE_ES_ '../library/convert_integer_to_uint8array.js'
+//- _REQUIRE_ES_ '../library/convert_uint8array_to_integer.js'
 //- _REQUIRE_ES_ '../library/pad_array_end.js'
 /**
  * This class represents the message type "PAIRING_REQUEST".
@@ -202,14 +202,14 @@ const Pairing_Request_Message = create_message_type(/** @lends Pairing_Request_M
 		[
 			data.user_id,
 			...pad_array_end(data.encrypted_pair_key, 22, 0),
-			...convert_integer_to_byte_array(data.security_counter, 2),
+			...convert_integer_to_uint8array(data.security_counter, 2),
 			...data.authentication_value,
 		]
 	),
 	properties: {
 		user_id: ((data_bytes) => data_bytes[0]),
 		encrypted_pair_key: ((data_bytes) => data_bytes.slice(1, 23)),
-		security_counter: ((data_bytes) => convert_byte_array_to_integer(data_bytes, 23, 2)),
+		security_counter: ((data_bytes) => convert_uint8array_to_integer(data_bytes, 23, 2)),
 		authentication_value: ((data_bytes) => data_bytes.slice(25, 29)),
 	},
 });
@@ -281,8 +281,8 @@ const Status_Request_Message = create_message_type(/** @lends Status_Request_Mes
 });
 
 //- _REQUIRE_ES_ '../library/pad_array_end.js'
-//- _REQUIRE_ES_ '../library/convert_string_to_utf8_encoded_byte_array.js'
-//- _REQUIRE_ES_ '../library/convert_utf8_encoded_byte_array_to_string.js'
+//- _REQUIRE_ES_ '../library/convert_string_to_utf8_encoded_uint8array.js'
+//- _REQUIRE_ES_ '../library/convert_utf8_encoded_uint8array_to_string.js'
 /**
  * This class represents the message type "USER_NAME_SET".
  * Sent to the Smart Lock in order to change a user name.
@@ -295,12 +295,12 @@ const User_Name_Set_Message = create_message_type(/** @lends User_Name_Set_Messa
 	encode: ((data) =>
 		[
 			data.user_id,
-			...pad_array_end(convert_string_to_utf8_encoded_byte_array(data.user_name), 20, 0),
+			...pad_array_end(convert_string_to_utf8_encoded_uint8array(data.user_name), 20, 0),
 		]
 	),
 	properties: {
 		user_id: ((data_bytes) => data_bytes[0]),
-		user_name: ((data_bytes) => convert_utf8_encoded_byte_array_to_string(data_bytes.slice(1, data_bytes.indexOf(0, 1)))),
+		user_name: ((data_bytes) => convert_utf8_encoded_uint8array_to_string(data_bytes.slice(1, data_bytes.indexOf(0, 1)))),
 	},
 });
 

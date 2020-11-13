@@ -30,41 +30,36 @@ const ansi_colorize = (string, code=31) =>
  * @param {Uint8Array} array_2 - The second byte array.
  * @returns {boolean} True if both byte arrays are equal.
  */
-const are_byte_arrays_equal = (byte_array_1, byte_array_2) =>
-	((byte_array_1.length === byte_array_2.length) && byte_array_1.every((value, index) => (byte_array_2[index] === value)))
+const are_uint8arrays_equal = (uint8array_1, uint8array_2) =>
+	((uint8array_1.length === uint8array_2.length) && uint8array_1.every((value, index) => (uint8array_2[index] === value)))
 
 /**
  * Convert a byte array to a hexadecimal string.
- * @param {Uint8Array} byte_array - The byte array to convert, an Array of integers in range 0..255.
+ * @param {Uint8Array} uint8array - The byte array to convert.
  * @param {string} [separator=" "] - The string that will separate the individual bytes.
  * @param {string} [prefix=""] - If specified, the hexadecimal representation of each byte will be prefixed with this string.
  * @param {string} [suffix=""] - If specified, the hexadecimal representation of each byte will be suffixed with this string.
  * @param {string} [padding="0"] - The hexadecimal representation of each byte will be left-padded with this character to length 2.
  * @returns {string} A hexadecimal string representation of the specified byte array.
  */
-const convert_byte_array_to_hex_string = (byte_array, separator=' ', prefix='', suffix='', padding='0') =>
-	byte_array.map((byte) => `${prefix}${byte.toString(16).toUpperCase().padStart(2, padding)}${suffix}`).join(separator)
+const convert_uint8array_to_hex_string = (uint8array, separator=' ', prefix='', suffix='', padding='0') =>
+	[...uint8array].map((byte) => `${prefix}${byte.toString(16).toUpperCase().padStart(2, padding)}${suffix}`).join(separator)
 
 /**
  * Convert a byte array to an integer.
- * @param {Uint8Array} byte_array - The byte array to convert.
- * @param {number} [start_index=0] - The index of the start byte in byte_array to convert to integer. Can be negative, in which case this will count from the end.
- * @param {number} [end_index=byte_array.length] - The index of the end byte in byte_array to convert to integer (exclusive - the byte at this index will not be part of the integer). Can be negative, in which case this will count from the end.
+ * @param {Uint8Array} uint8array - The byte array to convert.
+ * @param {number} [start_index=0] - The index of the start byte in uint8array to convert to integer. Can be negative, in which case this will count from the end.
+ * @param {number} [end_index=uint8array.length] - The index of the end byte in uint8array to convert to integer (exclusive - the byte at this index will not be part of the integer). Can be negative, in which case this will count from the end.
  * @param {boolean} [big_endian=true] - If true, parse the integer value in big endian format, little endian otherwise.
  * @returns {number} The converted integer.
  */
-const convert_byte_array_to_integer = (byte_array, start_index=0, end_index=byte_array.length, big_endian=true) =>
-	byte_array.slice(start_index, end_index).reduce((accumulator, byte, index, integer_byte_array) =>
-		(accumulator + (byte << (8 * (big_endian ? (integer_byte_array.length - 1 - index) : index))))
+const convert_uint8array_to_integer = (uint8array, start_index=0, end_index=uint8array.length, big_endian=true) =>
+	uint8array.slice(start_index, end_index).reduce((accumulator, byte, index, integer_uint8array) =>
+		(accumulator + (byte << (8 * (big_endian ? (integer_uint8array.length - 1 - index) : index))))
 	, 0)
 
-/**
- * "Canonicalize" a hexadecimal string by removing all non-hexadecimal characters, and converting all digits to lower case.
- * @param {string} hex_string - The hexadecimal string to canonicalize.
- * @returns {string} Canonicalized version of the hexadecimal string.
- */
-const canonicalize_hex_string = (hex_string) =>
-	hex_string.replace(/[^0-9A-Fa-f]/g, '').toLowerCase()
+// Canonicalize hexadecimal string <hex_string> by removing all non-hexadecimal characters, and converting all digits to lower case
+const canonicalize_hex_string = ((hex_string) => hex_string.replace(/[^0-9A-Fa-f]/g, '').toLowerCase());
 
 /**
  * Splits slicable into an array of chunks of length chunk_length (except for the last chunk, which may have a smaller length).
@@ -85,7 +80,7 @@ const split_into_chunks = (slicable, chunk_length) => {
  * @param {string} hex_string - The hexadecimal string to convert. Must contain exactly two hexadecimal digits per byte.
  * @returns {Uint8Array} The converted byte array. An array of unsigned integer numbers in range 0..255.
  */
-const convert_hex_string_to_byte_array = (hex_string) =>
+const convert_hex_string_to_uint8array = (hex_string) =>
 	Uint8Array.from(split_into_chunks(canonicalize_hex_string(hex_string), 2).map((byte_hex_string) => parseInt(byte_hex_string, 16)))
 
 /**
@@ -101,9 +96,9 @@ const is_neither_null_nor_undefined = (value) =>
  * @param iterable - The iterable to convert.
  * @returns {Uint8Array} iterable as an array.
  */
-const convert_to_byte_array = (iterable) => {
+const convert_to_uint8array = (iterable) => {
 	if (typeof(iterable) === 'string') {
-		return convert_hex_string_to_byte_array(iterable);
+		return convert_hex_string_to_uint8array(iterable);
 	}
 	return (is_neither_null_nor_undefined(iterable) ? Uint8Array.of(...iterable) : null)
 }
@@ -118,18 +113,18 @@ const convert_to_buffer = (value) =>
 
 /**
  * Convert a byte array-like object into several formats/representations.
- * @param {Buffer|Uint8Array} byte_array - The byte array-like object to convert.
+ * @param {Buffer|Uint8Array} uint8array - The byte array-like object to convert.
  * @param {string} [long_format_separator=" "] - The separator character to be used in the "long" format.
  * @returns {object} An object with "buffer" (the byte array as a Buffer instance), "array" (the original byte array), "short" (the byte array as a short hexadecimal string without any non-hexadecimal characters) and "long" (the byte array as a long hexadecimal string, where the bytes are separated by string long_format_separator properties.
  */
-const create_byte_array_formats = (byte_array, long_format_separator=' ') => {
-	byte_array = convert_to_byte_array(byte_array);
+const create_uint8array_formats = (uint8array, long_format_separator=' ') => {
+	uint8array = convert_to_uint8array(uint8array);
 	return {
-		array: [...byte_array],
-		uint8array: byte_array,
-		buffer: convert_to_buffer(byte_array),
-		long: convert_byte_array_to_hex_string(byte_array, long_format_separator),
-		short: convert_byte_array_to_hex_string(byte_array, ''),
+		array: [...uint8array],
+		uint8array: uint8array,
+		buffer: convert_to_buffer(uint8array),
+		long: convert_uint8array_to_hex_string(uint8array, long_format_separator),
+		short: convert_uint8array_to_hex_string(uint8array, ''),
 	};
 }
 
@@ -139,7 +134,7 @@ const create_byte_array_formats = (byte_array, long_format_separator=' ') => {
  * @param {function} create_element_at_index - A function that will be called once for every element of the array to create. Receives a single argument, the zero-based index of the element to create.
  * @returns {Uint8Array} A new array with the elements created by the create_element_at_index function.
  */
-const create_byte_array_of_length = (length, create_element_at_index) =>
+const create_uint8array_of_length = (length, create_element_at_index) =>
 	Uint8Array.from({length:length}, (value, index) => create_element_at_index(index))
 
 /**
@@ -164,8 +159,8 @@ const create_random_byte = () =>
  * @param {number} length - The length of the array to create.
  * @returns {Uint8Array} A new array filled with random integers in range 0..255.
  */
-const create_random_byte_array = (length) =>
-	create_byte_array_of_length(length, create_random_byte)
+const create_random_uint8array = (length) =>
+	create_uint8array_of_length(length, create_random_byte)
 
 /**
  * Import/Require the "events" module as "Event_Emitter".
@@ -200,8 +195,8 @@ const extract_byte_from_integer = (integer, byte_index) =>
  * @param {boolean} [big_endian=true] - If true, the created array will be big endian, little endian otherwise.
  * @returns {Uint8Array} The converted byte array.
  */
-const convert_integer_to_byte_array = (integer, number_of_bytes, big_endian=true) =>
-	create_byte_array_of_length(number_of_bytes, (index) => extract_byte_from_integer(integer, (big_endian ? (number_of_bytes - 1 - index) : index)))
+const convert_integer_to_uint8array = (integer, number_of_bytes, big_endian=true) =>
+	create_uint8array_of_length(number_of_bytes, (index) => extract_byte_from_integer(integer, (big_endian ? (number_of_bytes - 1 - index) : index)))
 
 /**
  * Checks if a certain bit in a value is set.
@@ -238,13 +233,13 @@ const range = function*(...args) {
 
 /**
  * XOR a byte array with another byte array.
- * @param {Uint8Array} byte_array - The byte array to XOR. The returned byte array will have the same length as this array.
- * @param {Uint8Array} xor_byte_array - The byte array to XOR with. Doesn't need to have the same length as byte_array; if the end of this array is reached, it will continue at the beginning.
- * @param {number} [xor_byte_array_offset=0] - The index of the byte in xor_byte_array to start with.
- * @returns {Uint8Array} The XORed array. Will have the same length as byte_array.
+ * @param {Uint8Array} uint8array - The byte array to XOR. The returned byte array will have the same length as this array.
+ * @param {Uint8Array} xor_uint8array - The byte array to XOR with. Doesn't need to have the same length as uint8array; if the end of this array is reached, it will continue at the beginning.
+ * @param {number} [xor_uint8array_offset=0] - The index of the byte in xor_uint8array to start with.
+ * @returns {Uint8Array} The XORed array. Will have the same length as uint8array.
  */
-const xor_byte_arrays = (byte_array, xor_byte_array, xor_byte_array_offset=0) =>
-	byte_array.map((byte, index) => (byte ^ xor_byte_array[(index + xor_byte_array_offset) % xor_byte_array.length]))
+const xor_uint8arrays = (uint8array, xor_uint8array, xor_uint8array_offset=0) =>
+	uint8array.map((byte, index) => (byte ^ xor_uint8array[(index + xor_uint8array_offset) % xor_uint8array.length]))
 
 /**
  * Time-limits a Promise by creating a time-limited proxy Promise for the original Promise.
@@ -288,16 +283,16 @@ const wait_milliseconds = (milliseconds) =>
  * @param {string} string - The string to convert.
  * @returns {Uint8Array} The converted, UTF-8-encoded byte array.
  */
-const convert_string_to_utf8_encoded_byte_array = (string) =>
-	convert_to_byte_array(Buffer.from(string, 'utf8'))
+const convert_string_to_utf8_encoded_uint8array = (string) =>
+	convert_to_uint8array(Buffer.from(string, 'utf8'))
 
 /**
  * Convert UTF-8-encoded byte array to a string.
- * @param {Uint8Array} byte_array - The UTF-8-encoded byte array to convert.
+ * @param {Uint8Array} uint8array - The UTF-8-encoded byte array to convert.
  * @returns {string} The converted string.
  */
-const convert_utf8_encoded_byte_array_to_string = (byte_array) =>
-	Buffer.from(byte_array).toString('utf8')
+const convert_utf8_encoded_uint8array_to_string = (uint8array) =>
+	Buffer.from(uint8array).toString('utf8')
 
 /**
  * Convert an array of objects to an object/dictionary of objects, where each property key/name is the value of the specified property of the object, and the property value is the object itself.
@@ -322,31 +317,53 @@ const create_lookup_table_by_object_property_value = (objects_array, property_na
 const bit_mask_for_value = (value, bit_index) =>
 	((+value) << bit_index)
 
+// Canonicalize the MAC address <mac_address> (a string)
+const canonicalize_mac_address = ((mac_address) => split_into_chunks(canonicalize_hex_string(mac_address), 2).join(':'));
+
+/**
+ * Register a temporary event listener.
+ * 
+ * @param {Object} event_emitter - The event emitter to register the temporary event on.
+ * @param {String} event_id - The ID of the event to subscribe to.
+ * @param {function} event_listener - The temporary callback function to be called when the event occurs. If this function returns true, the event listener will be unregistered.
+ */
+const register_temporary_event_listener = ((event_emitter, event_id, event_listener) => {
+	const event_listener_proxy = ((...event_args) => {
+		if (event_listener(...event_args) === true) {
+			event_emitter.off(event_id, event_listener_proxy);
+		}
+	});
+	event_emitter.on(event_id, event_listener_proxy);
+});
+
 /**
  * What this module exports.
  */
 module.exports = {
 	ansi_colorize: ansi_colorize,
-	are_byte_arrays_equal: are_byte_arrays_equal,
-	convert_byte_array_to_hex_string: convert_byte_array_to_hex_string,
-	convert_byte_array_to_integer: convert_byte_array_to_integer,
-	convert_hex_string_to_byte_array: convert_hex_string_to_byte_array,
-	convert_to_byte_array: convert_to_byte_array,
-	create_byte_array_formats: create_byte_array_formats,
-	create_random_byte_array: create_random_byte_array,
+	are_uint8arrays_equal: are_uint8arrays_equal,
+	convert_uint8array_to_hex_string: convert_uint8array_to_hex_string,
+	convert_uint8array_to_integer: convert_uint8array_to_integer,
+	convert_hex_string_to_uint8array: convert_hex_string_to_uint8array,
+	convert_to_uint8array: convert_to_uint8array,
+	create_uint8array_formats: create_uint8array_formats,
+	create_random_uint8array: create_random_uint8array,
 	Event_Emitter: Event_Emitter,
 	generic_ceil: generic_ceil,
-	convert_integer_to_byte_array: convert_integer_to_byte_array,
+	convert_integer_to_uint8array: convert_integer_to_uint8array,
 	is_bit_set: is_bit_set,
 	pad_array_end: pad_array_end,
 	split_into_chunks: split_into_chunks,
 	range: range,
-	xor_byte_arrays: xor_byte_arrays,
+	xor_uint8arrays: xor_uint8arrays,
 	time_limit_promise: time_limit_promise,
 	wait_milliseconds: wait_milliseconds,
-	convert_string_to_utf8_encoded_byte_array: convert_string_to_utf8_encoded_byte_array,
-	convert_utf8_encoded_byte_array_to_string: convert_utf8_encoded_byte_array_to_string,
+	convert_string_to_utf8_encoded_uint8array: convert_string_to_utf8_encoded_uint8array,
+	convert_utf8_encoded_uint8array_to_string: convert_utf8_encoded_uint8array_to_string,
 	create_lookup_table_by_object_property_value: create_lookup_table_by_object_property_value,
 	bit_mask_for_value: bit_mask_for_value,
+	canonicalize_mac_address: canonicalize_mac_address,
+	canonicalize_hex_string: canonicalize_hex_string,
+	register_temporary_event_listener: register_temporary_event_listener,
 };
 
