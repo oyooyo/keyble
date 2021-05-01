@@ -29,9 +29,9 @@
 		"url": "https://github.com/oyooyo/keyble/issues"
 	},
 	"dependencies": {
-		"@abandonware/noble": "^1.9.2-10",
+		"@abandonware/noble": "^1.9.2-13",
 		"aes-js": "^3.1.2",
-		"debug": "^4.2.0"
+		"debug": "^4.3.1"
 	},
 	"files": [
 		"*.js",
