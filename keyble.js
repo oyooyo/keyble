@@ -539,6 +539,8 @@ const Key_Ble = class extends Event_Emitter {
 			this.state = CONNECTION_STATE.CONNECTED;
 			this.emit('connected');
 		});
+		await peripheral.connectAsync();
+		const {services:[communication_service], characteristics:[send_characteristic, receive_characteristic]} = await peripheral.discoverSomeServicesAndCharacteristicsAsync([SERVICE_UUID], [SEND_CHARACTERISTIC_UUID, RECEIVE_CHARACTERISTIC_UUID]);
 		peripheral.once('disconnect', () => {
 			this.state = CONNECTION_STATE.DISCONNECTED;
 			receive_characteristic.off('data', on_data_received);
@@ -547,8 +549,6 @@ const Key_Ble = class extends Event_Emitter {
 			this.receive_characteristic = null;
 			this.emit('disconnected');
 		});
-		await peripheral.connectAsync();
-		const {services:[communication_service], characteristics:[send_characteristic, receive_characteristic]} = await peripheral.discoverSomeServicesAndCharacteristicsAsync([SERVICE_UUID], [SEND_CHARACTERISTIC_UUID, RECEIVE_CHARACTERISTIC_UUID]);
 		const on_data_received = (message_fragment_bytes) => {
 			this.on_message_fragment_received(new Message_Fragment(message_fragment_bytes));
 		}
