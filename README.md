@@ -21,6 +21,16 @@ If you intend to use *keyble* to control an eqiva Bluetooth Smart Lock, you migh
     - Registering new users
     - Toggling between locked and unlocked states
 
+## ESP32 port
+
+There is now also a [port of *keyble* for the ESP32 microcontroller](https://github.com/lumokitho/esp32-keyble) written in C++ that you may consider as an alternative. While I haven't tested it myself yet, it sounds very interesting! Basically, the idea is that you place a (wall socket-powered) ESP32 microcontroller board near the smart lock that exclusively acts like a kind of MQTT-bridge for the smart lock. So this approach requires a MQTT server running on your network, but I assume that most people interested in *keyble* use a MQTT server anyway.
+
+One major hurdle the developers of the ESP32 port were facing was using BLE and WiFi at the same time. The workaround they found was that when a command to be sent to the smart lock is received via MQTT, the ESP32 will disconnect from MQTT and WiFi, turn WiFi off and BLE on, connect to the smart lock and send the command, then disconnect from the smart lock, turn BLE off and WiFi on and connect to MQTT again in order to wait for the next command. A minor disadvantage of this workaround is that there cannot be a permanent connection to the smart lock, so there will always be an unavoidable 1-2 second delay before the command will be executed because the connection has to be established first. But that is the default behaviour in *keyble* as well (unless you use the `--auto_disconnect_time 0` parameter) so for most people this probably doesn't even make a difference.
+
+A huge advantage of the ESP32 port on the other hand is that it has exclusive access to the BLE hardware, and does not have to rely on a Node.js BLE library that is in a bit of an abandoned state since 2018, which I believe is the root of many problems people may be facing when using *keyble*.
+
+As I understand, the original developer of the ESP32 port was [@MariusSchiffer](https://github.com/MariusSchiffer/esp32-keyble), with [@tc-maxx](https://github.com/tc-maxx/esp32-keyble), RoP09 and [lumokitho](https://github.com/lumokitho/esp32-keyble) greatly improving his work. *(If I forgot to mention someone, please let me know)*
+
 ## Requirements
 
 *keyble* requires the following hard- and software:
