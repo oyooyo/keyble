@@ -472,7 +472,6 @@ const Key_Ble = class extends Event_Emitter {
 					battery_low: battery_low,
 					lock_status: lock_status_string,
 					lock_status_id: lock_status_id,
-					battery_low: battery_low,
 					pairing_allowed: pairing_allowed,
 				};
 				this.emit('status_update', lock_state);
