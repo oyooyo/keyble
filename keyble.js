@@ -436,8 +436,6 @@ const Key_Ble = class extends Event_Emitter {
 				if (! are_uint8arrays_equal(message_authentication_value, computed_authentication_value)) {
 					throw (new Error('Received message contains invalid authentication value'));
 				}
-			} else {
-				message_data_bytes = message_data_bytes;
 			}
 			this.received_message_fragments = [];
 			this.on_message_received(Message_Type.create(message_data_bytes));
@@ -472,7 +470,6 @@ const Key_Ble = class extends Event_Emitter {
 					battery_low: battery_low,
 					lock_status: lock_status_string,
 					lock_status_id: lock_status_id,
-					battery_low: battery_low,
 					pairing_allowed: pairing_allowed,
 				};
 				this.emit('status_update', lock_state);
